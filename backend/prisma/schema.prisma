@@ -1,0 +1,165 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// User types for content targeting
+// Note: Only PRE_PAID and POST_PAID are used in the app
+// ALL is kept for backwards compatibility but not shown in UI
+enum UserType {
+  PRE_PAID
+  POST_PAID
+  ALL
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String
+  packages  Package[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Package {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Float?
+  currency    String   @default("USD")
+  category    Category @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  tags        String[]
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Grid feature now supports user type targeting
+model GridFeature {
+  id        String   @id @default(uuid())
+  title     String
+  type      String   // e.g. "banner", "carousel", "horizontal-list", "vertical-list", "html-block"
+  order     Int      @default(0)
+  config    Json     // Flexible config for the feature
+  userType  UserType @default(PRE_PAID) // Target specific user types
+  screenId  String?  // Which screen this belongs to (e.g. "dashboard", "home")
+  screen    AppScreen? @relation(fields: [screenId], references: [id])
+  carouselId String? @unique // Link to carousel if type is "carousel"
+  carousel   Carousel? @relation(fields: [carouselId], references: [id])
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// App screens for organizing grid features
+model AppScreen {
+  id          String        @id @default(uuid())
+  slug        String        @unique // e.g. "dashboard", "home", "offers"
+  name        String
+  description String?
+  gridFeatures GridFeature[]
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+// Carousel container
+model Carousel {
+  id          String         @id @default(uuid())
+  name        String
+  description String?
+  userType    UserType       @default(PRE_PAID)
+  autoPlay    Boolean        @default(true)
+  interval    Int            @default(5000) // ms between slides
+  cards       CarouselCard[]
+  gridFeature GridFeature?
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+// Carousel cards with full content support
+model CarouselCard {
+  id          String    @id @default(uuid())
+  carouselId  String
+  carousel    Carousel  @relation(fields: [carouselId], references: [id], onDelete: Cascade)
+  order       Int       @default(0)
+  
+  // Card content
+  imageUrl    String?
+  title       String?
+  subtitle    String?
+  description String?
+  price       Float?
+  currency    String    @default("USD")
+  
+  // Call to action
+  ctaText     String?   // e.g. "Learn More", "Subscribe Now"
+  ctaAction   String?   // e.g. "navigate", "deeplink", "webview"
+  ctaUrl      String?   // Target URL or deeplink
+  
+  // Styling & metadata
+  backgroundColor String?
+  textColor   String?
+  metadata    Json?     // Any additional custom data
+  
+  userType    UserType  @default(PRE_PAID) // Card-level targeting
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Content {
+  id        String   @id @default(uuid())
+  title     String
+  body      String?
+  type      String   // "image", "text", "video"
+  tags      String[] // "New", "Old", etc.
+  url       String?
+  userType  UserType @default(PRE_PAID)
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  title       String
+  body        String
+  targetType  String   // "all", "segment", "specific"
+  targetValue String?  // Segment ID or User ID
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  status      String   @default("DRAFT") // DRAFT, SCHEDULED, SENT, FAILED
+  imageUrl    String?
+  userType    UserType @default(PRE_PAID) // Target by user type
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Page {
+  id        String   @id @default(uuid())
+  slug      String   @unique // e.g. "privacy-policy"
+  title     String
+  content   String   @db.Text
+  isPublished Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
