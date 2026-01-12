@@ -1,10 +1,32 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { UploadService } from '../upload/upload.service';
 import { UserType } from '@prisma/client';
 
 @Injectable()
 export class CmsService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private uploadService: UploadService,
+    ) { }
+
+    // Base URL for serving uploaded files
+    private getBaseUrl(): string {
+        return process.env.API_BASE_URL || 'http://localhost:4000';
+    }
+
+    // Transform image path to full URL, converting base64 to file if needed
+    private async toFullImageUrl(path: string | null | undefined): Promise<string | null> {
+        if (!path) return null;
+        if (path.startsWith('http://') || path.startsWith('https://')) return path;
+        if (path.startsWith('/uploads/')) return `${this.getBaseUrl()}${path}`;
+        // Auto-convert base64 to file for legacy data
+        if (path.startsWith('data:')) {
+            const filePath = await this.uploadService.saveBase64Image(path);
+            return `${this.getBaseUrl()}${filePath}`;
+        }
+        return path;
+    }
 
     /**
      * Get dashboard screen JSON for Android app consumption
@@ -106,12 +128,24 @@ export class CmsService {
      * Transform a grid feature into clean JSON for Android
      */
     private transformFeature(feature: any) {
+        // Transform images in config
+        const config = { ...feature.config };
+        if (config.images && Array.isArray(config.images)) {
+            config.images = config.images.map((img: string) => this.toFullImageUrl(img));
+        }
+        if (config.gridItems && Array.isArray(config.gridItems)) {
+            config.gridItems = config.gridItems.map((item: any) => ({
+                ...item,
+                iconUrl: this.toFullImageUrl(item.iconUrl),
+            }));
+        }
+
         const base = {
             id: feature.id,
             type: feature.type,
             title: feature.title,
             order: feature.order,
-            config: feature.config,
+            config: config,
         };
 
         // If it's a carousel, include the cards
@@ -125,7 +159,7 @@ export class CmsService {
                     cards: feature.carousel.cards.map((card: any) => ({
                         id: card.id,
                         order: card.order,
-                        imageUrl: card.imageUrl,
+                        imageUrl: this.toFullImageUrl(card.imageUrl),
                         title: card.title,
                         subtitle: card.subtitle,
                         description: card.description,
@@ -147,18 +181,25 @@ export class CmsService {
         }
 
         // If it's a grid with items, include them
-        if (feature.type === 'grid' && feature.config?.gridItems) {
+        if ((feature.type === 'grid' || feature.type === 'list') && config.gridItems) {
             return {
                 ...base,
-                items: feature.config.gridItems.map((item: any) => ({
+                items: config.gridItems.map((item: any) => ({
                     id: item.id,
-                    imageUrl: item.imageUrl,
+                    iconUrl: this.toFullImageUrl(item.iconUrl),
                     title: item.title,
                     subtitle: item.subtitle,
-                    price: item.price,
-                    currency: item.currency,
                     ctaUrl: item.ctaUrl,
+                    showNewTag: item.showNewTag,
                 })),
+            };
+        }
+
+        // If it's a banner, transform banner images
+        if (feature.type === 'banner' && config.images) {
+            return {
+                ...base,
+                bannerImage: config.images[0] ? this.toFullImageUrl(config.images[0]) : null,
             };
         }
 

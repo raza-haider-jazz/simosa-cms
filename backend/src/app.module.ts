@@ -12,6 +12,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { CarouselModule } from './carousel/carousel.module';
 import { ScreensModule } from './screens/screens.module';
 import { CmsModule } from './cms/cms.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { CmsModule } from './cms/cms.module';
     CarouselModule,
     ScreensModule,
     CmsModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService],
