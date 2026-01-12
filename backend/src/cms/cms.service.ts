@@ -15,16 +15,13 @@ export class CmsService {
         return process.env.API_BASE_URL || 'http://localhost:4000';
     }
 
-    // Transform image path to full URL, converting base64 to file if needed
-    private async toFullImageUrl(path: string | null | undefined | any): Promise<string | null> {
+    // Transform image path to full URL (synchronous version for JSON serialization)
+    private toFullImageUrl(path: string | null | undefined | any): string | null {
         if (!path || typeof path !== 'string') return null;
         if (path.startsWith('http://') || path.startsWith('https://')) return path;
         if (path.startsWith('/uploads/')) return `${this.getBaseUrl()}${path}`;
-        // Auto-convert base64 to file for legacy data
-        if (path.startsWith('data:')) {
-            const filePath = await this.uploadService.saveBase64Image(path);
-            return `${this.getBaseUrl()}${filePath}`;
-        }
+        // Skip base64 conversion in sync mode - should be pre-converted on upload
+        if (path.startsWith('data:')) return null;
         return path;
     }
 
