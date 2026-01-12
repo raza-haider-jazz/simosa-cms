@@ -16,8 +16,8 @@ export class CmsService {
     }
 
     // Transform image path to full URL, converting base64 to file if needed
-    private async toFullImageUrl(path: string | null | undefined): Promise<string | null> {
-        if (!path) return null;
+    private async toFullImageUrl(path: string | null | undefined | any): Promise<string | null> {
+        if (!path || typeof path !== 'string') return null;
         if (path.startsWith('http://') || path.startsWith('https://')) return path;
         if (path.startsWith('/uploads/')) return `${this.getBaseUrl()}${path}`;
         // Auto-convert base64 to file for legacy data
