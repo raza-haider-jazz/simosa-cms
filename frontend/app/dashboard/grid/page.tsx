@@ -72,12 +72,11 @@ type UserType = "PRE_PAID" | "POST_PAID";
 
 type GridItemContent = {
     id: string;
-    imageUrl: string;
+    iconUrl: string;
     title: string;
     subtitle: string;
-    price: number | null;
-    currency: string;
     ctaUrl: string;
+    showNewTag?: boolean;
 };
 
 type CarouselCard = {
@@ -136,21 +135,74 @@ const emptyCard: CarouselCard = {
 
 const emptyGridItem: GridItemContent = {
     id: "",
-    imageUrl: "",
+    iconUrl: "",
     title: "",
     subtitle: "",
-    price: null,
-    currency: "PKR",
     ctaUrl: "",
+    showNewTag: false,
 };
 
-const fileToDataUrl = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
+const API_URL_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+
+// Upload a file and get back a URL
+const uploadFile = async (file: File): Promise<string> => {
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await fetch(`${API_URL_BASE}/upload/file`, {
+            method: 'POST',
+            body: formData,
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Upload failed:', response.status, errorText);
+            throw new Error(`Failed to upload file: ${response.status} - ${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Upload success:', data);
+        return data.url; // Returns something like "/uploads/abc123.jpg"
+    } catch (error) {
+        console.error('Upload error:', error);
+        throw error;
+    }
+};
+
+// Convert base64 to file URL (for backward compatibility with existing data)
+const uploadBase64 = async (dataUrl: string): Promise<string> => {
+    if (!dataUrl.startsWith('data:')) {
+        return dataUrl; // Already a URL
+    }
+    
+    const response = await fetch(`${API_URL_BASE}/upload/base64`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dataUrl }),
     });
+    
+    if (!response.ok) {
+        throw new Error('Failed to upload base64 image');
+    }
+    
+    const data = await response.json();
+    return data.url;
+};
+
+// Get the full URL for an image path
+const getImageUrl = (path: string): string => {
+    if (!path) return '';
+    if (path.startsWith('data:')) return path; // Still base64 (not yet saved)
+    if (path.startsWith('http')) return path; // Already full URL
+    if (path.startsWith('/uploads')) return `${API_URL_BASE}${path}`;
+    return path;
+};
+
+// Sanitize image value to ensure it's a string (not empty object)
+const sanitizeImageValue = (value: any): string => {
+    if (!value || typeof value !== 'string') return '';
+    return value;
 };
 
 function SortableItem({
@@ -232,10 +284,22 @@ function CarouselCardEditor({
     onChange: (card: CarouselCard) => void;
     onRemove: () => void;
 }) {
+    const [uploading, setUploading] = React.useState(false);
+    
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            const dataUrl = await fileToDataUrl(e.target.files[0]);
-            onChange({ ...card, imageUrl: dataUrl });
+            setUploading(true);
+            try {
+                console.log('Uploading carousel image:', e.target.files[0].name);
+                const url = await uploadFile(e.target.files[0]);
+                console.log('Carousel upload result:', url, 'Type:', typeof url);
+                onChange({ ...card, imageUrl: url });
+            } catch (error) {
+                console.error('Failed to upload image:', error);
+                alert(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            } finally {
+                setUploading(false);
+            }
         }
     };
 
@@ -254,20 +318,26 @@ function CarouselCardEditor({
                     <div className="flex gap-2 mt-1">
                         {card.imageUrl ? (
                             <div className="relative w-24 h-16 border rounded overflow-hidden flex-shrink-0">
-                                <img src={card.imageUrl} className="w-full h-full object-cover" alt="" />
+                                <img src={getImageUrl(card.imageUrl)} className="w-full h-full object-cover" alt="" />
                                 <button onClick={() => onChange({ ...card, imageUrl: "" })} className="absolute top-0 right-0 bg-red-500 text-white p-0.5 rounded-bl">
                                     <X className="h-3 w-3" />
                                 </button>
                             </div>
                         ) : (
-                            <label className="w-24 h-16 border border-dashed rounded flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 flex-shrink-0">
-                                <Upload className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-[9px] text-muted-foreground mt-1">Upload</span>
-                                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                            <label className={`w-24 h-16 border border-dashed rounded flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 flex-shrink-0 ${uploading ? 'opacity-50' : ''}`}>
+                                {uploading ? (
+                                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                ) : (
+                                    <>
+                                        <Upload className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-[9px] text-muted-foreground mt-1">Upload</span>
+                                    </>
+                                )}
+                                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
                             </label>
                         )}
                         <Input
-                            value={card.imageUrl.startsWith('data:') ? '' : card.imageUrl}
+                            value={card.imageUrl.startsWith('/uploads') ? '' : card.imageUrl}
                             onChange={(e) => onChange({ ...card, imageUrl: e.target.value })}
                             placeholder="Or paste image URL..."
                             className="h-8 text-sm flex-1"
@@ -351,10 +421,22 @@ function GridItemEditor({
     onChange: (item: GridItemContent) => void;
     onRemove: () => void;
 }) {
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const [uploading, setUploading] = React.useState(false);
+    
+    const handleIconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            const dataUrl = await fileToDataUrl(e.target.files[0]);
-            onChange({ ...item, imageUrl: dataUrl });
+            setUploading(true);
+            try {
+                console.log('Uploading grid icon:', e.target.files[0].name);
+                const url = await uploadFile(e.target.files[0]);
+                console.log('Grid icon upload result:', url, 'Type:', typeof url);
+                onChange({ ...item, iconUrl: url });
+            } catch (error) {
+                console.error('Failed to upload icon:', error);
+                alert(`Failed to upload icon: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            } finally {
+                setUploading(false);
+            }
         }
     };
 
@@ -370,26 +452,31 @@ function GridItemEditor({
             </div>
             
             <div className="grid grid-cols-2 gap-2">
+                {/* Icon for circular display */}
                 <div className="col-span-2">
-                    <Label className="text-xs">Image</Label>
+                    <Label className="text-xs">Icon (Circular Display)</Label>
                     <div className="flex gap-2 mt-1">
-                        {item.imageUrl ? (
-                            <div className="relative w-16 h-16 border rounded overflow-hidden flex-shrink-0">
-                                <img src={item.imageUrl} className="w-full h-full object-cover" alt="" />
-                                <button onClick={() => onChange({ ...item, imageUrl: "" })} className="absolute top-0 right-0 bg-red-500 text-white p-0.5 rounded-bl">
+                        {item.iconUrl ? (
+                            <div className="relative w-12 h-12 border rounded-full overflow-hidden flex-shrink-0 bg-gray-100">
+                                <img src={getImageUrl(item.iconUrl)} className="w-full h-full object-contain p-1" alt="" />
+                                <button onClick={() => onChange({ ...item, iconUrl: "" })} className="absolute -top-1 -right-1 bg-red-500 text-white p-0.5 rounded-full">
                                     <X className="h-2 w-2" />
                                 </button>
                             </div>
                         ) : (
-                            <label className="w-16 h-16 border border-dashed rounded flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 flex-shrink-0">
-                                <Upload className="h-3 w-3 text-muted-foreground" />
-                                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                            <label className={`w-12 h-12 border border-dashed rounded-full flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 flex-shrink-0 ${uploading ? 'opacity-50' : ''}`}>
+                                {uploading ? (
+                                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                                ) : (
+                                    <Upload className="h-3 w-3 text-muted-foreground" />
+                                )}
+                                <input type="file" accept="image/*" className="hidden" onChange={handleIconUpload} disabled={uploading} />
                             </label>
                         )}
                         <Input
-                            value={item.imageUrl.startsWith('data:') ? '' : item.imageUrl}
-                            onChange={(e) => onChange({ ...item, imageUrl: e.target.value })}
-                            placeholder="Image URL"
+                            value={(item.iconUrl || '').startsWith('/uploads') ? '' : (item.iconUrl || '')}
+                            onChange={(e) => onChange({ ...item, iconUrl: e.target.value })}
+                            placeholder="Icon URL"
                             className="h-8 text-sm flex-1"
                         />
                     </div>
@@ -402,13 +489,103 @@ function GridItemEditor({
                     <Label className="text-xs">Subtitle</Label>
                     <Input value={item.subtitle} onChange={(e) => onChange({ ...item, subtitle: e.target.value })} placeholder="Subtitle" className="h-7 text-sm" />
                 </div>
-                <div>
-                    <Label className="text-xs">Price</Label>
-                    <Input type="number" value={item.price || ""} onChange={(e) => onChange({ ...item, price: e.target.value ? parseFloat(e.target.value) : null })} placeholder="0" className="h-7 text-sm" />
-                </div>
-                <div>
+                <div className="col-span-2">
                     <Label className="text-xs">Link URL</Label>
                     <Input value={item.ctaUrl} onChange={(e) => onChange({ ...item, ctaUrl: e.target.value })} placeholder="/path" className="h-7 text-sm" />
+                </div>
+                <div className="col-span-2">
+                    <div className="flex items-center space-x-2">
+                        <Switch 
+                            id={`new-tag-${item.id}`}
+                            checked={item.showNewTag || false} 
+                            onCheckedChange={(checked) => onChange({ ...item, showNewTag: checked })} 
+                        />
+                        <Label htmlFor={`new-tag-${item.id}`} className="text-xs">Show HOT Tag</Label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Banner Editor Component
+function BannerEditor({
+    editingItem,
+    setEditingItem,
+}: {
+    editingItem: GridItem;
+    setEditingItem: (item: GridItem) => void;
+}) {
+    const [uploading, setUploading] = React.useState(false);
+    
+    const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setUploading(true);
+            try {
+                console.log('Uploading banner file:', e.target.files[0].name);
+                const url = await uploadFile(e.target.files[0]);
+                console.log('Banner upload result:', url, 'Type:', typeof url);
+                setEditingItem({ ...editingItem, images: [url] });
+            } catch (error) {
+                console.error('Failed to upload banner:', error);
+                alert(`Failed to upload banner: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            } finally {
+                setUploading(false);
+            }
+        }
+    };
+
+    return (
+        <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Title</Label>
+                <Input value={editingItem.title} onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })} className="col-span-3" />
+            </div>
+            <div className="grid grid-cols-4 items-start gap-4">
+                <Label className="text-right pt-2">Banner Image</Label>
+                <div className="col-span-3 space-y-2">
+                    {editingItem.images?.[0] ? (
+                        <div className="relative w-full aspect-[2/1] border rounded overflow-hidden">
+                            <img src={getImageUrl(editingItem.images[0])} className="w-full h-full object-cover" alt="" />
+                            <button 
+                                onClick={() => setEditingItem({ ...editingItem, images: [] })} 
+                                className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
+                    ) : (
+                        <label className={`w-full aspect-[2/1] border border-dashed rounded flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 ${uploading ? 'opacity-50' : ''}`}>
+                            {uploading ? (
+                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-2" />
+                            ) : (
+                                <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                            )}
+                            <span className="text-sm text-muted-foreground">
+                                {uploading ? 'Uploading...' : 'Click to upload banner image'}
+                            </span>
+                            <input 
+                                type="file" 
+                                accept="image/*" 
+                                className="hidden" 
+                                onChange={handleBannerUpload}
+                                disabled={uploading}
+                            />
+                        </label>
+                    )}
+                    <Input 
+                        value={(editingItem.images?.[0] || '').startsWith('/uploads') ? '' : (editingItem.images?.[0] || '')} 
+                        onChange={(e) => setEditingItem({ ...editingItem, images: [e.target.value] })} 
+                        placeholder="Or paste image URL..." 
+                        className="h-8 text-sm" 
+                    />
+                </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">NEW Tag</Label>
+                <div className="flex items-center space-x-2 col-span-3">
+                    <Switch checked={editingItem.showNewTag || false} onCheckedChange={(checked) => setEditingItem({ ...editingItem, showNewTag: checked })} />
+                    <Label>Show NEW badge</Label>
                 </div>
             </div>
         </div>
@@ -477,7 +654,8 @@ export default function GridPage() {
                         columns: item.config?.columns || 2,
                         displayMode: item.config?.displayMode || "grid",
                         showNewTag: item.config?.showNewTag || false,
-                        images: item.config?.images || [],
+                        // Sanitize images on load - filter out any non-strings
+                        images: (item.config?.images || []).map(sanitizeImageValue).filter(Boolean),
                         htmlContent: item.config?.htmlContent || "",
                         order: item.order,
                         userType: item.userType === "ALL" ? "PRE_PAID" : item.userType,
@@ -487,7 +665,7 @@ export default function GridPage() {
                         carouselCards: item.carousel?.cards?.map((c: any) => ({
                             id: c.id,
                             order: c.order,
-                            imageUrl: c.imageUrl || "",
+                            imageUrl: sanitizeImageValue(c.imageUrl),
                             title: c.title || "",
                             subtitle: c.subtitle || "",
                             description: c.description || "",
@@ -501,7 +679,11 @@ export default function GridPage() {
                         })) || [],
                         autoPlay: item.carousel?.autoPlay ?? true,
                         interval: item.carousel?.interval ?? 5000,
-                        gridItems: item.config?.gridItems || [],
+                        // Sanitize gridItems iconUrl on load
+                        gridItems: (item.config?.gridItems || []).map((gi: any) => ({
+                            ...gi,
+                            iconUrl: sanitizeImageValue(gi.iconUrl),
+                        })),
                         originalCardIds, // Track for deletion
                     };
                 });
@@ -572,7 +754,7 @@ export default function GridPage() {
                             interval: item.interval ?? 5000,
                             cards: (item.carouselCards || []).map((card, idx) => ({
                                 order: idx,
-                                imageUrl: card.imageUrl,
+                                imageUrl: sanitizeImageValue(card.imageUrl),
                                 title: card.title,
                                 subtitle: card.subtitle,
                                 description: card.description,
@@ -649,9 +831,12 @@ export default function GridPage() {
                                 columns: item.columns,
                                 displayMode: item.displayMode,
                                 showNewTag: item.showNewTag,
-                                images: item.images,
+                                images: (item.images || []).map(sanitizeImageValue).filter(Boolean),
                                 htmlContent: item.htmlContent,
-                                gridItems: item.gridItems,
+                                gridItems: (item.gridItems || []).map(gi => ({
+                                    ...gi,
+                                    iconUrl: sanitizeImageValue(gi.iconUrl)
+                                })),
                             }
                         })
                     });
@@ -681,9 +866,12 @@ export default function GridPage() {
                             columns: item.columns,
                             displayMode: item.displayMode,
                             showNewTag: item.showNewTag,
-                            images: item.images,
+                            images: (item.images || []).map(sanitizeImageValue).filter(Boolean),
                             htmlContent: item.htmlContent,
-                            gridItems: item.gridItems,
+                            gridItems: (item.gridItems || []).map(gi => ({
+                                ...gi,
+                                iconUrl: sanitizeImageValue(gi.iconUrl)
+                            })),
                         }
                     })
                 });
@@ -730,7 +918,7 @@ export default function GridPage() {
                         const card = cards[idx];
                         const cardData = {
                             order: idx,
-                            imageUrl: card.imageUrl,
+                            imageUrl: sanitizeImageValue(card.imageUrl),
                             title: card.title,
                             subtitle: card.subtitle,
                             description: card.description,
@@ -801,7 +989,7 @@ export default function GridPage() {
             id: `temp-${Date.now()}`,
             title: `New ${type.charAt(0).toUpperCase() + type.slice(1)}`,
             type,
-            columns: type === 'grid' ? 2 : 1,
+            columns: type === 'grid' ? 4 : 1,
             displayMode: type === 'list' ? 'list' : 'grid',
             showNewTag: false,
             images: [],
@@ -812,11 +1000,12 @@ export default function GridPage() {
             carouselCards: type === 'carousel' ? [] : undefined,
             autoPlay: type === 'carousel' ? true : undefined,
             interval: type === 'carousel' ? 5000 : undefined,
-            gridItems: type === 'grid' ? [] : undefined,
+            gridItems: (type === 'grid' || type === 'list') ? [] : undefined,
             originalCardIds: [],
         };
         setCurrentItems([...currentItems, newItem]);
-        if (type === 'carousel' || type === 'grid') setEditingItem(newItem);
+        // Open editor for all types
+        setEditingItem(newItem);
     };
 
     const removeItem = (id: string) => setCurrentItems(currentItems.filter((item) => item.id !== id));
@@ -854,7 +1043,7 @@ export default function GridPage() {
     };
 
     const addGridItem = () => {
-        if (editingItem?.type === 'grid') {
+        if (editingItem?.type === 'grid' || editingItem?.type === 'list') {
             const newGridItem: GridItemContent = {
                 ...emptyGridItem,
                 id: `temp-grid-item-${Date.now()}`,
@@ -933,12 +1122,15 @@ export default function GridPage() {
                             <h3 className="mb-2 text-sm font-medium text-muted-foreground">
                                 Add to {activeUserType === "PRE_PAID" ? "Pre-Paid" : "Post-Paid"}
                             </h3>
-                            <div className="grid grid-cols-3 gap-2">
+                            <div className="grid grid-cols-4 gap-2">
                                 <Button variant="outline" size="sm" onClick={() => addItem("carousel")}>
                                     <Layers className="mr-1 h-3 w-3" /> Carousel
                                 </Button>
                                 <Button variant="outline" size="sm" onClick={() => addItem("grid")}>
                                     <LayoutGrid className="mr-1 h-3 w-3" /> Grid
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => addItem("list")}>
+                                    <List className="mr-1 h-3 w-3" /> List
                                 </Button>
                                 <Button variant="outline" size="sm" onClick={() => addItem("banner")}>
                                     <ImageIcon className="mr-1 h-3 w-3" /> Banner
@@ -1019,21 +1211,27 @@ export default function GridPage() {
                                     <div key={item.id} className="relative">
                                         {/* Banner */}
                                         {item.type === 'banner' && (
-                                            <div className="w-full aspect-[2/1] bg-slate-200 rounded-lg flex items-center justify-center relative overflow-hidden">
-                                                {item.images[0] ? <img src={item.images[0]} className="w-full h-full object-cover" alt="" /> : <ImageIcon className="text-slate-400 h-6 w-6" />}
+                                            <div className="w-full aspect-[2/1] bg-slate-200 rounded-lg flex items-center justify-center relative overflow-hidden shadow-sm">
+                                                {item.images[0] ? <img src={getImageUrl(item.images[0])} className="w-full h-full object-cover" alt="" /> : <ImageIcon className="text-slate-400 h-6 w-6" />}
                                                 <div className="absolute bottom-1.5 left-1.5 bg-black/50 text-white text-[10px] px-1.5 rounded">{item.title}</div>
+                                                {item.showNewTag && (
+                                                    <Badge className="absolute top-1.5 right-1.5 text-[6px] h-4 px-1.5 bg-red-500 text-white">NEW</Badge>
+                                                )}
                                             </div>
                                         )}
 
                                         {/* Carousel */}
                                         {item.type === 'carousel' && item.carouselCards && item.carouselCards.length > 0 && (
                                             <div className="relative">
+                                                {item.showNewTag && (
+                                                    <Badge className="absolute top-1.5 right-1.5 z-20 text-[6px] h-4 px-1.5 bg-red-500 text-white">NEW</Badge>
+                                                )}
                                                 {(() => {
                                                     const cardIndex = (previewCardIndex[item.id] || 0) % item.carouselCards!.length;
                                                     const card = item.carouselCards![cardIndex];
                                                     return (
                                                         <div className="w-full aspect-[2/1] rounded-lg flex flex-col justify-end relative overflow-hidden" style={{ backgroundColor: card.backgroundColor }}>
-                                                            {card.imageUrl && <img src={card.imageUrl} className="absolute inset-0 w-full h-full object-cover" alt="" />}
+                                                            {card.imageUrl && <img src={getImageUrl(card.imageUrl)} className="absolute inset-0 w-full h-full object-cover" alt="" />}
                                                             <div className="relative z-10 p-2.5 bg-gradient-to-t from-black/60 to-transparent">
                                                                 <p className="text-[9px] font-semibold" style={{ color: card.textColor }}>{card.title}</p>
                                                                 <p className="text-[7px] opacity-80" style={{ color: card.textColor }}>{card.subtitle}</p>
@@ -1071,28 +1269,82 @@ export default function GridPage() {
                                             </div>
                                         )}
 
-                                        {/* Grid with items */}
+                                        {/* Grid with items - circular icon style like mobile app */}
                                         {item.type === 'grid' && (
-                                            <div>
-                                                <p className="text-[9px] font-medium text-muted-foreground mb-1">{item.title}</p>
-                                                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${item.columns}, 1fr)`, gap: '0.375rem' }}>
+                                            <div className="bg-white rounded-xl p-2 shadow-sm">
+                                                {item.showNewTag && (
+                                                    <div className="flex items-center justify-between mb-1">
+                                                        <p className="text-[8px] font-medium text-muted-foreground">{item.title}</p>
+                                                        <Badge className="text-[5px] h-3 px-1 bg-red-500 text-white">NEW</Badge>
+                                                    </div>
+                                                )}
+                                                {!item.showNewTag && <p className="text-[8px] font-medium text-muted-foreground mb-1">{item.title}</p>}
+                                                <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${item.columns}, minmax(0, 1fr))` }}>
                                                     {item.gridItems && item.gridItems.length > 0 ? (
                                                         item.gridItems.map((gi, i) => (
-                                                            <div key={gi.id || i} className="bg-white shadow-sm rounded-md overflow-hidden">
-                                                                <div className="aspect-square bg-slate-100 relative">
-                                                                    {gi.imageUrl ? <img src={gi.imageUrl} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full flex items-center justify-center"><Package className="h-4 w-4 text-slate-300" /></div>}
+                                                            <div key={gi.id || i} className="flex flex-col items-center text-center p-1">
+                                                                {/* Circular icon container */}
+                                                                <div className="relative w-8 h-8 rounded-full bg-gray-100 shadow-sm flex items-center justify-center mb-1 border border-gray-200 flex-shrink-0">
+                                                                    {gi.iconUrl ? (
+                                                                        <img src={getImageUrl(gi.iconUrl)} className="w-5 h-5 object-contain" alt="" />
+                                                                    ) : (
+                                                                        <Package className="h-3 w-3 text-slate-400" />
+                                                                    )}
+                                                                    {/* HOT badge on item */}
+                                                                    {gi.showNewTag && (
+                                                                        <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[4px] px-0.5 rounded font-bold">HOT</span>
+                                                                    )}
                                                                 </div>
-                                                                <div className="p-1.5">
-                                                                    <p className="text-[8px] font-medium truncate">{gi.title || 'Item'}</p>
-                                                                    {gi.price && <p className="text-[7px] text-muted-foreground">{gi.currency} {gi.price}</p>}
-                                                                </div>
+                                                                {/* Label below icon */}
+                                                                <p className="text-[6px] font-medium text-gray-700 leading-tight w-full truncate">{gi.title || 'Item'}</p>
+                                                                {gi.subtitle && <p className="text-[5px] text-gray-500 w-full truncate">{gi.subtitle}</p>}
                                                             </div>
                                                         ))
                                                     ) : (
                                                         Array.from({ length: item.columns * 2 }).map((_, i) => (
-                                                            <div key={i} className="aspect-square bg-white shadow-sm rounded-md flex flex-col items-center justify-center">
-                                                                <div className="w-6 h-6 bg-slate-100 rounded-full mb-1"></div>
-                                                                <div className="h-1.5 w-8 bg-slate-100 rounded"></div>
+                                                            <div key={i} className="flex flex-col items-center p-1">
+                                                                <div className="w-8 h-8 bg-slate-100 rounded-full mb-1 border border-gray-200"></div>
+                                                                <div className="h-1 w-6 bg-slate-100 rounded"></div>
+                                                            </div>
+                                                        ))
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* List view */}
+                                        {item.type === 'list' && (
+                                            <div className="bg-white rounded-xl p-3 shadow-sm">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <p className="text-[9px] font-medium text-muted-foreground">{item.title}</p>
+                                                    {item.showNewTag && <Badge className="text-[6px] h-3 px-1 bg-red-500 text-white">NEW</Badge>}
+                                                </div>
+                                                <div className="space-y-2">
+                                                    {item.gridItems && item.gridItems.length > 0 ? (
+                                                        item.gridItems.map((gi, i) => (
+                                                            <div key={gi.id || i} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                                                                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 border border-gray-200">
+                                                                    {gi.iconUrl ? (
+                                                                        <img src={getImageUrl(gi.iconUrl)} className="w-5 h-5 object-contain" alt="" />
+                                                                    ) : (
+                                                                        <Package className="h-3 w-3 text-slate-400" />
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="text-[8px] font-medium text-gray-700 truncate">{gi.title || 'Item'}</p>
+                                                                    {gi.subtitle && <p className="text-[6px] text-gray-500 truncate">{gi.subtitle}</p>}
+                                                                </div>
+                                                                {gi.showNewTag && <span className="bg-red-500 text-white text-[5px] px-1 rounded font-bold">NEW</span>}
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        Array.from({ length: 3 }).map((_, i) => (
+                                                            <div key={i} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                                                                <div className="w-8 h-8 bg-slate-100 rounded-full"></div>
+                                                                <div className="flex-1">
+                                                                    <div className="h-2 w-16 bg-slate-100 rounded mb-1"></div>
+                                                                    <div className="h-1.5 w-10 bg-slate-100 rounded"></div>
+                                                                </div>
                                                             </div>
                                                         ))
                                                     )}
@@ -1119,10 +1371,13 @@ export default function GridPage() {
 
             {/* Edit Dialog */}
             <Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
-                <DialogContent className={cn("max-h-[85vh] overflow-hidden flex flex-col", (editingItem?.type === 'carousel' || editingItem?.type === 'grid') ? "max-w-2xl" : "max-w-md")}>
+                <DialogContent className={cn("max-h-[85vh] overflow-hidden flex flex-col", (editingItem?.type === 'carousel' || editingItem?.type === 'grid' || editingItem?.type === 'list') ? "max-w-2xl" : "max-w-md")}>
                     <DialogHeader>
                         <DialogTitle>
-                            {editingItem?.type === 'carousel' ? 'Edit Carousel' : editingItem?.type === 'grid' ? 'Edit Grid' : 'Edit Component'}
+                            {editingItem?.type === 'carousel' ? 'Edit Carousel' : 
+                             editingItem?.type === 'grid' ? 'Edit Grid' : 
+                             editingItem?.type === 'list' ? 'Edit List' : 
+                             editingItem?.type === 'banner' ? 'Edit Banner' : 'Edit Component'}
                         </DialogTitle>
                         <DialogDescription>
                             For {editingItem?.userType === "PRE_PAID" ? "Pre-Paid" : "Post-Paid"} users
@@ -1153,6 +1408,13 @@ export default function GridPage() {
                                         <div className="grid grid-cols-4 items-center gap-4">
                                             <Label className="text-right">Interval</Label>
                                             <Input type="number" value={editingItem.interval || 5000} onChange={(e) => setEditingItem({ ...editingItem, interval: parseInt(e.target.value) })} className="col-span-3" />
+                                        </div>
+                                        <div className="grid grid-cols-4 items-center gap-4">
+                                            <Label className="text-right">NEW Tag</Label>
+                                            <div className="flex items-center space-x-2 col-span-3">
+                                                <Switch checked={editingItem.showNewTag || false} onCheckedChange={(checked) => setEditingItem({ ...editingItem, showNewTag: checked })} />
+                                                <Label>Show "NEW" badge</Label>
+                                            </div>
                                         </div>
                                     </TabsContent>
                                     
@@ -1194,6 +1456,13 @@ export default function GridPage() {
                                                 <span className="font-mono w-4">{editingItem.columns}</span>
                                             </div>
                                         </div>
+                                        <div className="grid grid-cols-4 items-center gap-4">
+                                            <Label className="text-right">NEW Tag</Label>
+                                            <div className="flex items-center space-x-2 col-span-3">
+                                                <Switch checked={editingItem.showNewTag || false} onCheckedChange={(checked) => setEditingItem({ ...editingItem, showNewTag: checked })} />
+                                                <Label>Show "NEW" badge on section</Label>
+                                            </div>
+                                        </div>
                                     </TabsContent>
                                     
                                     <TabsContent value="items" className="mt-4">
@@ -1215,12 +1484,57 @@ export default function GridPage() {
                                         </ScrollArea>
                                     </TabsContent>
                                 </Tabs>
+                            ) : editingItem.type === 'list' ? (
+                                <Tabs defaultValue="settings" className="w-full">
+                                    <TabsList className="grid w-full grid-cols-2">
+                                        <TabsTrigger value="settings">Settings</TabsTrigger>
+                                        <TabsTrigger value="items">Items ({editingItem.gridItems?.length || 0})</TabsTrigger>
+                                    </TabsList>
+                                    
+                                    <TabsContent value="settings" className="space-y-4 mt-4">
+                                        <div className="grid grid-cols-4 items-center gap-4">
+                                            <Label className="text-right">Title</Label>
+                                            <Input value={editingItem.title} onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })} className="col-span-3" />
+                                        </div>
+                                        <div className="grid grid-cols-4 items-center gap-4">
+                                            <Label className="text-right">NEW Tag</Label>
+                                            <div className="flex items-center space-x-2 col-span-3">
+                                                <Switch checked={editingItem.showNewTag || false} onCheckedChange={(checked) => setEditingItem({ ...editingItem, showNewTag: checked })} />
+                                                <Label>Show "NEW" badge</Label>
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+                                    
+                                    <TabsContent value="items" className="mt-4">
+                                        <ScrollArea className="h-[400px] pr-4">
+                                            <div className="space-y-3">
+                                                {editingItem.gridItems?.map((item, index) => (
+                                                    <GridItemEditor
+                                                        key={item.id || index}
+                                                        item={item}
+                                                        index={index}
+                                                        onChange={(updated) => updateGridItem(index, updated)}
+                                                        onRemove={() => removeGridItem(index)}
+                                                    />
+                                                ))}
+                                                <Button variant="outline" className="w-full" onClick={addGridItem}>
+                                                    <Plus className="h-4 w-4 mr-2" />Add List Item
+                                                </Button>
+                                            </div>
+                                        </ScrollArea>
+                                    </TabsContent>
+                                </Tabs>
+                            ) : editingItem.type === 'banner' ? (
+                                <BannerEditor 
+                                    editingItem={editingItem} 
+                                    setEditingItem={setEditingItem} 
+                                />
                             ) : (
                                 <div className="grid gap-4 py-4">
                                     <div className="grid grid-cols-4 items-center gap-4">
                                         <Label className="text-right">Title</Label>
                                         <Input value={editingItem.title} onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })} className="col-span-3" />
-                                    </div>
+                                    </div>  
                                 </div>
                             )}
                         </div>
