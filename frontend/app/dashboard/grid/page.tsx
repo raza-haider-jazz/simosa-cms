@@ -95,10 +95,20 @@ type CarouselCard = {
     textColor: string;
 };
 
+type SectionBanner = {
+    id: string;
+    order: number;
+    imageUrl: string;
+    label: string;
+    title: string;
+    tag: string;
+    ctaUrl: string;
+};
+
 type GridItem = {
     id: string;
     title: string;
-    type: "banner" | "list" | "html" | "grid" | "carousel" | "horizontal-list";
+    type: "banner" | "list" | "html" | "grid" | "carousel" | "horizontal-list" | "section";
     columns: number;
     displayMode: "list" | "grid";
     showNewTag: boolean;
@@ -113,6 +123,9 @@ type GridItem = {
     autoPlay?: boolean;
     interval?: number;
     gridItems?: GridItemContent[];
+    // Section-specific fields
+    sectionBanners?: SectionBanner[];
+    backgroundColor?: string;
     // Track original card IDs for deletion
     originalCardIds?: string[];
 };
@@ -140,6 +153,16 @@ const emptyGridItem: GridItemContent = {
     subtitle: "",
     ctaUrl: "",
     showNewTag: false,
+};
+
+const emptySectionBanner: SectionBanner = {
+    id: "",
+    order: 0,
+    imageUrl: "",
+    label: "",
+    title: "",
+    tag: "",
+    ctaUrl: "",
 };
 
 const API_URL_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
@@ -224,6 +247,7 @@ function SortableItem({
         html: <Type className="h-4 w-4" />,
         carousel: <Layers className="h-4 w-4" />,
         "horizontal-list": <List className="h-4 w-4" />,
+        section: <Package className="h-4 w-4" />,
     };
 
     return (
@@ -256,6 +280,12 @@ function SortableItem({
                         <>
                             <span>{item.columns} Cols</span>
                             {item.gridItems && <span>{item.gridItems.length} Items</span>}
+                        </>
+                    )}
+                    {item.type === 'section' && (
+                        <>
+                            {item.gridItems && <span>{item.gridItems.length} Grid Items</span>}
+                            {item.sectionBanners && <span>{item.sectionBanners.length} Banners</span>}
                         </>
                     )}
                 </div>
@@ -592,6 +622,245 @@ function BannerEditor({
     );
 }
 
+// Section Banner Editor (for banners within a section)
+function SectionBannerEditor({
+    banner,
+    index,
+    onChange,
+    onRemove,
+}: {
+    banner: SectionBanner;
+    index: number;
+    onChange: (banner: SectionBanner) => void;
+    onRemove: () => void;
+}) {
+    const [uploading, setUploading] = React.useState(false);
+    
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setUploading(true);
+            try {
+                console.log('Uploading section banner image:', e.target.files[0].name);
+                const url = await uploadFile(e.target.files[0]);
+                console.log('Section banner upload result:', url);
+                onChange({ ...banner, imageUrl: url });
+            } catch (error) {
+                console.error('Failed to upload image:', error);
+                alert(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            } finally {
+                setUploading(false);
+            }
+        }
+    };
+
+    return (
+        <div className="border rounded-lg p-4 space-y-3 bg-muted/20">
+            <div className="flex items-center justify-between">
+                <h4 className="font-medium text-sm">Banner {index + 1}</h4>
+                <Button variant="ghost" size="sm" onClick={onRemove} className="text-destructive h-8">
+                    <Trash2 className="h-3 w-3 mr-1" /> Remove
+                </Button>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2">
+                    <Label className="text-xs">Banner Image</Label>
+                    <div className="flex gap-2 mt-1">
+                        {banner.imageUrl ? (
+                            <div className="relative w-32 h-20 border rounded overflow-hidden flex-shrink-0">
+                                <img src={getImageUrl(banner.imageUrl)} className="w-full h-full object-cover" alt="" />
+                                <button onClick={() => onChange({ ...banner, imageUrl: "" })} className="absolute top-0 right-0 bg-red-500 text-white p-0.5 rounded-bl">
+                                    <X className="h-3 w-3" />
+                                </button>
+                            </div>
+                        ) : (
+                            <label className={`w-32 h-20 border border-dashed rounded flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 flex-shrink-0 ${uploading ? 'opacity-50' : ''}`}>
+                                {uploading ? (
+                                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                ) : (
+                                    <>
+                                        <Upload className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-[9px] text-muted-foreground mt-1">Upload</span>
+                                    </>
+                                )}
+                                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
+                            </label>
+                        )}
+                        <Input
+                            value={banner.imageUrl.startsWith('/uploads') ? '' : banner.imageUrl}
+                            onChange={(e) => onChange({ ...banner, imageUrl: e.target.value })}
+                            placeholder="Or paste URL..."
+                            className="h-8 text-sm flex-1"
+                        />
+                    </div>
+                </div>
+
+                <div>
+                    <Label className="text-xs">Label</Label>
+                    <Input value={banner.label} onChange={(e) => onChange({ ...banner, label: e.target.value })} placeholder="TRENDING" className="h-8 text-sm" />
+                </div>
+                <div>
+                    <Label className="text-xs">Title (Bold)</Label>
+                    <Input value={banner.title} onChange={(e) => onChange({ ...banner, title: e.target.value })} placeholder="Main Title" className="h-8 text-sm" />
+                </div>
+                <div className="col-span-2">
+                    <Label className="text-xs">Tag (Small)</Label>
+                    <Input value={banner.tag} onChange={(e) => onChange({ ...banner, tag: e.target.value })} placeholder="Subtitle" className="h-8 text-sm" />
+                </div>
+                <div className="col-span-2">
+                    <Label className="text-xs">CTA URL</Label>
+                    <Input value={banner.ctaUrl} onChange={(e) => onChange({ ...banner, ctaUrl: e.target.value })} placeholder="/path or https://..." className="h-8 text-sm" />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Section Editor Component
+function SectionEditor({
+    editingItem,
+    setEditingItem,
+}: {
+    editingItem: GridItem;
+    setEditingItem: (item: GridItem) => void;
+}) {
+    const addSectionBanner = () => {
+        const newBanner: SectionBanner = {
+            ...emptySectionBanner,
+            id: `temp-section-banner-${Date.now()}`,
+            order: editingItem.sectionBanners?.length || 0,
+        };
+        setEditingItem({ ...editingItem, sectionBanners: [...(editingItem.sectionBanners || []), newBanner] });
+    };
+
+    const updateSectionBanner = (index: number, banner: SectionBanner) => {
+        if (editingItem.sectionBanners) {
+            const newBanners = [...editingItem.sectionBanners];
+            newBanners[index] = banner;
+            setEditingItem({ ...editingItem, sectionBanners: newBanners });
+        }
+    };
+
+    const removeSectionBanner = (index: number) => {
+        if (editingItem.sectionBanners) {
+            const newBanners = [...editingItem.sectionBanners];
+            newBanners.splice(index, 1);
+            setEditingItem({ ...editingItem, sectionBanners: newBanners });
+        }
+    };
+
+    const addGridItem = () => {
+        const newGridItem: GridItemContent = {
+            ...emptyGridItem,
+            id: `temp-section-grid-${Date.now()}`,
+        };
+        setEditingItem({ ...editingItem, gridItems: [...(editingItem.gridItems || []), newGridItem] });
+    };
+
+    const updateGridItem = (index: number, item: GridItemContent) => {
+        if (editingItem.gridItems) {
+            const newItems = [...editingItem.gridItems];
+            newItems[index] = item;
+            setEditingItem({ ...editingItem, gridItems: newItems });
+        }
+    };
+
+    const removeGridItem = (index: number) => {
+        if (editingItem.gridItems) {
+            const newItems = [...editingItem.gridItems];
+            newItems.splice(index, 1);
+            setEditingItem({ ...editingItem, gridItems: newItems });
+        }
+    };
+
+    return (
+        <Tabs defaultValue="general" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="general">General</TabsTrigger>
+                <TabsTrigger value="grid">Grid Items</TabsTrigger>
+                <TabsTrigger value="banners">Banners</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="general" className="space-y-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">Section Title</Label>
+                    <Input value={editingItem.title} onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })} placeholder="LIFESTYLE" className="col-span-3" />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">Background Color</Label>
+                    <div className="col-span-3 flex gap-2">
+                        <Input type="color" value={editingItem.backgroundColor || '#1a1a2e'} onChange={(e) => setEditingItem({ ...editingItem, backgroundColor: e.target.value })} className="w-20 h-10 p-1" />
+                        <Input value={editingItem.backgroundColor || '#1a1a2e'} onChange={(e) => setEditingItem({ ...editingItem, backgroundColor: e.target.value })} placeholder="#1a1a2e" className="flex-1" />
+                    </div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">Grid Columns</Label>
+                    <div className="col-span-3">
+                        <Slider value={[editingItem.columns]} onValueChange={(v) => setEditingItem({ ...editingItem, columns: v[0] })} min={2} max={6} step={1} className="flex-1" />
+                        <span className="text-sm text-muted-foreground ml-2">{editingItem.columns} columns</span>
+                    </div>
+                </div>
+            </TabsContent>
+
+            <TabsContent value="grid" className="space-y-4">
+                <div className="flex justify-between items-center">
+                    <h3 className="font-medium">Section Grid Items</h3>
+                    <Button onClick={addGridItem} size="sm">
+                        <Plus className="h-3 w-3 mr-1" /> Add Grid Item
+                    </Button>
+                </div>
+                <ScrollArea className="h-[400px]">
+                    <div className="space-y-3 pr-4">
+                        {editingItem.gridItems?.map((item, index) => (
+                            <GridItemEditor
+                                key={item.id}
+                                item={item}
+                                index={index}
+                                onChange={(updated) => updateGridItem(index, updated)}
+                                onRemove={() => removeGridItem(index)}
+                            />
+                        ))}
+                        {(!editingItem.gridItems || editingItem.gridItems.length === 0) && (
+                            <div className="text-center text-muted-foreground py-8">
+                                <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                <p className="text-sm">No grid items yet</p>
+                            </div>
+                        )}
+                    </div>
+                </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="banners" className="space-y-4">
+                <div className="flex justify-between items-center">
+                    <h3 className="font-medium">Section Banners (Swipeable)</h3>
+                    <Button onClick={addSectionBanner} size="sm">
+                        <Plus className="h-3 w-3 mr-1" /> Add Banner
+                    </Button>
+                </div>
+                <ScrollArea className="h-[400px]">
+                    <div className="space-y-3 pr-4">
+                        {editingItem.sectionBanners?.map((banner, index) => (
+                            <SectionBannerEditor
+                                key={banner.id}
+                                banner={banner}
+                                index={index}
+                                onChange={(updated) => updateSectionBanner(index, updated)}
+                                onRemove={() => removeSectionBanner(index)}
+                            />
+                        ))}
+                        {(!editingItem.sectionBanners || editingItem.sectionBanners.length === 0) && (
+                            <div className="text-center text-muted-foreground py-8">
+                                <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                <p className="text-sm">No banners yet</p>
+                            </div>
+                        )}
+                    </div>
+                </ScrollArea>
+            </TabsContent>
+        </Tabs>
+    );
+}
+
 export default function GridPage() {
     const [prePaidItems, setPrePaidItems] = useState<GridItem[]>([]);
     const [postPaidItems, setPostPaidItems] = useState<GridItem[]>([]);
@@ -684,6 +953,12 @@ export default function GridPage() {
                             ...gi,
                             iconUrl: sanitizeImageValue(gi.iconUrl),
                         })),
+                        // Section-specific fields
+                        sectionBanners: (item.config?.sectionBanners || []).map((sb: any) => ({
+                            ...sb,
+                            imageUrl: sanitizeImageValue(sb.imageUrl),
+                        })),
+                        backgroundColor: item.config?.backgroundColor,
                         originalCardIds, // Track for deletion
                     };
                 });
@@ -816,6 +1091,42 @@ export default function GridPage() {
                     
                     const created = await res.json();
                     console.log('Created grid:', created.id);
+                } else if (item.type === 'section') {
+                    console.log('Creating section:', item.title, 'with', item.gridItems?.length || 0, 'grid items and', item.sectionBanners?.length || 0, 'banners');
+                    const res = await fetch(`${API_URL}/grid`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            title: item.title,
+                            type: item.type,
+                            order: orderIndex,
+                            userType: item.userType,
+                            screenId: screenId,
+                            config: {
+                                columns: item.columns,
+                                displayMode: item.displayMode,
+                                showNewTag: item.showNewTag,
+                                backgroundColor: item.backgroundColor,
+                                gridItems: (item.gridItems || []).map(gi => ({
+                                    ...gi,
+                                    iconUrl: sanitizeImageValue(gi.iconUrl)
+                                })),
+                                sectionBanners: (item.sectionBanners || []).map(sb => ({
+                                    ...sb,
+                                    imageUrl: sanitizeImageValue(sb.imageUrl)
+                                })),
+                            }
+                        })
+                    });
+                    
+                    if (!res.ok) {
+                        const errorText = await res.text();
+                        console.error('Failed to create section:', res.status, errorText);
+                        throw new Error(`Failed to create section: ${res.status} ${errorText}`);
+                    }
+                    
+                    const created = await res.json();
+                    console.log('Created section:', created.id);
                 } else {
                     console.log('Creating', item.type, ':', item.title);
                     const res = await fetch(`${API_URL}/grid`, {
@@ -868,10 +1179,15 @@ export default function GridPage() {
                             showNewTag: item.showNewTag,
                             images: (item.images || []).map(sanitizeImageValue).filter(Boolean),
                             htmlContent: item.htmlContent,
+                            backgroundColor: item.backgroundColor,
                             gridItems: (item.gridItems || []).map(gi => ({
                                 ...gi,
                                 iconUrl: sanitizeImageValue(gi.iconUrl)
                             })),
+                            sectionBanners: item.type === 'section' ? (item.sectionBanners || []).map(sb => ({
+                                ...sb,
+                                imageUrl: sanitizeImageValue(sb.imageUrl)
+                            })) : undefined,
                         }
                     })
                 });
@@ -989,7 +1305,7 @@ export default function GridPage() {
             id: `temp-${Date.now()}`,
             title: `New ${type.charAt(0).toUpperCase() + type.slice(1)}`,
             type,
-            columns: type === 'grid' ? 4 : 1,
+            columns: type === 'grid' ? 4 : type === 'section' ? 4 : 1,
             displayMode: type === 'list' ? 'list' : 'grid',
             showNewTag: false,
             images: [],
@@ -1000,7 +1316,9 @@ export default function GridPage() {
             carouselCards: type === 'carousel' ? [] : undefined,
             autoPlay: type === 'carousel' ? true : undefined,
             interval: type === 'carousel' ? 5000 : undefined,
-            gridItems: (type === 'grid' || type === 'list') ? [] : undefined,
+            gridItems: (type === 'grid' || type === 'list' || type === 'section') ? [] : undefined,
+            sectionBanners: type === 'section' ? [] : undefined,
+            backgroundColor: type === 'section' ? '#1a1a2e' : undefined,
             originalCardIds: [],
         };
         setCurrentItems([...currentItems, newItem]);
@@ -1122,7 +1440,7 @@ export default function GridPage() {
                             <h3 className="mb-2 text-sm font-medium text-muted-foreground">
                                 Add to {activeUserType === "PRE_PAID" ? "Pre-Paid" : "Post-Paid"}
                             </h3>
-                            <div className="grid grid-cols-4 gap-2">
+                            <div className="grid grid-cols-5 gap-2">
                                 <Button variant="outline" size="sm" onClick={() => addItem("carousel")}>
                                     <Layers className="mr-1 h-3 w-3" /> Carousel
                                 </Button>
@@ -1134,6 +1452,9 @@ export default function GridPage() {
                                 </Button>
                                 <Button variant="outline" size="sm" onClick={() => addItem("banner")}>
                                     <ImageIcon className="mr-1 h-3 w-3" /> Banner
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => addItem("section")}>
+                                    <Package className="mr-1 h-3 w-3" /> Section
                                 </Button>
                             </div>
                         </div>
@@ -1351,6 +1672,81 @@ export default function GridPage() {
                                                 </div>
                                             </div>
                                         )}
+
+                                        {/* Section - Grid + Swipeable Banners */}
+                                        {item.type === 'section' && (
+                                            <div className="-mx-3" style={{ backgroundColor: item.backgroundColor || '#1a1a2e' }}>
+                                                <div className="p-3">
+                                                    {/* Section Title */}
+                                                    {item.title && (
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <p className="text-[10px] font-bold text-white text-center w-full">{item.title}</p>
+                                                            {item.showNewTag && <Badge className="text-[6px] h-3 px-1 bg-red-500 text-white absolute right-3">NEW</Badge>}
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {/* Grid Items */}
+                                                    {item.gridItems && item.gridItems.length > 0 && (
+                                                        <div className="grid gap-2 mb-3" style={{ gridTemplateColumns: `repeat(${item.columns || 4}, minmax(0, 1fr))` }}>
+                                                            {item.gridItems.map((gi, i) => (
+                                                                <div key={gi.id || i} className="flex flex-col items-center text-center gap-1">
+                                                                    <div className="w-10 h-10 rounded-lg bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20 flex-shrink-0">
+                                                                        {gi.iconUrl ? (
+                                                                            <img src={getImageUrl(gi.iconUrl)} className="w-6 h-6 object-contain" alt="" />
+                                                                        ) : (
+                                                                            <Package className="h-4 w-4 text-white/60" />
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex flex-col items-center w-full">
+                                                                        <p className="text-[6px] font-medium text-white leading-tight truncate w-full">{gi.title || 'Item'}</p>
+                                                                        {gi.subtitle && <p className="text-[5px] text-white/70 truncate w-full">{gi.subtitle}</p>}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {/* Swipeable Banners */}
+                                                    {item.sectionBanners && item.sectionBanners.length > 0 && (
+                                                        <div className="relative">
+                                                            {(() => {
+                                                                const bannerIndex = (previewCardIndex[`${item.id}-section`] || 0) % item.sectionBanners.length;
+                                                                const banner = item.sectionBanners[bannerIndex];
+                                                                return (
+                                                                    <div className="w-full">
+                                                                        {/* Labels above image - uniform height */}
+                                                                        <div className="flex flex-col gap-0.5 mb-1 min-h-[28px]">
+                                                                            <span className="text-[7px] font-bold text-yellow-400 uppercase tracking-wide h-[8px]">{banner.label || '\u00A0'}</span>
+                                                                            <span className="text-[10px] font-bold text-white leading-tight h-[12px]">{banner.title || '\u00A0'}</span>
+                                                                            <span className="text-[7px] text-gray-300 h-[8px]">{banner.tag || '\u00A0'}</span>
+                                                                        </div>
+                                                                        {/* Banner image */}
+                                                                        <div className="w-full aspect-[2/1] rounded-lg overflow-hidden relative bg-black/20">
+                                                                            {banner.imageUrl && <img src={getImageUrl(banner.imageUrl)} className="w-full h-full object-cover" alt="" />}
+                                                                            {item.sectionBanners.length > 1 && (
+                                                                                <>
+                                                                                    <button onClick={() => prevPreviewCard(`${item.id}-section`, item.sectionBanners!.length)} className="absolute left-0.5 top-1/2 -translate-y-1/2 bg-black/30 rounded-full p-0.5">
+                                                                                        <ChevronLeft className="h-3 w-3 text-white" />
+                                                                                    </button>
+                                                                                    <button onClick={() => nextPreviewCard(`${item.id}-section`, item.sectionBanners!.length)} className="absolute right-0.5 top-1/2 -translate-y-1/2 bg-black/30 rounded-full p-0.5">
+                                                                                        <ChevronRight className="h-3 w-3 text-white" />
+                                                                                    </button>
+                                                                                    <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5">
+                                                                                        {item.sectionBanners.map((_, i) => (
+                                                                                            <div key={i} className={cn("w-1 h-1 rounded-full", i === bannerIndex ? "bg-white" : "bg-white/40")} />
+                                                                                        ))}
+                                                                                    </div>
+                                                                                </>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })()}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 ))
                             )}
@@ -1377,6 +1773,7 @@ export default function GridPage() {
                             {editingItem?.type === 'carousel' ? 'Edit Carousel' : 
                              editingItem?.type === 'grid' ? 'Edit Grid' : 
                              editingItem?.type === 'list' ? 'Edit List' : 
+                             editingItem?.type === 'section' ? 'Edit Section' :
                              editingItem?.type === 'banner' ? 'Edit Banner' : 'Edit Component'}
                         </DialogTitle>
                         <DialogDescription>
@@ -1526,6 +1923,11 @@ export default function GridPage() {
                                 </Tabs>
                             ) : editingItem.type === 'banner' ? (
                                 <BannerEditor 
+                                    editingItem={editingItem} 
+                                    setEditingItem={setEditingItem} 
+                                />
+                            ) : editingItem.type === 'section' ? (
+                                <SectionEditor 
                                     editingItem={editingItem} 
                                     setEditingItem={setEditingItem} 
                                 />

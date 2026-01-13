@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Query, Header } from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, Header, BadRequestException } from '@nestjs/common';
 import { CmsService } from './cms.service';
 import { UserType } from '@prisma/client';
 
@@ -17,7 +17,14 @@ export class CmsController {
     @Get('dashboard')
     @Header('Content-Type', 'application/json')
     @Header('Cache-Control', 'public, max-age=60') // Cache for 1 minute
-    getDashboard(@Query('userType') userType: UserType = 'PRE_PAID') {
+    getDashboard(@Query('userType') userTypeParam?: string) {
+        // Convert to uppercase and validate
+        const userType = (userTypeParam?.toUpperCase() || 'PRE_PAID') as UserType;
+        
+        if (!['PRE_PAID', 'POST_PAID', 'ALL'].includes(userType)) {
+            throw new BadRequestException('Invalid userType. Must be PRE_PAID, POST_PAID, or ALL');
+        }
+        
         return this.cmsService.getDashboard(userType);
     }
 
@@ -30,8 +37,15 @@ export class CmsController {
     @Header('Cache-Control', 'public, max-age=60')
     getScreen(
         @Param('slug') slug: string,
-        @Query('userType') userType: UserType = 'PRE_PAID',
+        @Query('userType') userTypeParam?: string,
     ) {
+        // Convert to uppercase and validate
+        const userType = (userTypeParam?.toUpperCase() || 'PRE_PAID') as UserType;
+        
+        if (!['PRE_PAID', 'POST_PAID', 'ALL'].includes(userType)) {
+            throw new BadRequestException('Invalid userType. Must be PRE_PAID, POST_PAID, or ALL');
+        }
+        
         return this.cmsService.getScreen(slug, userType);
     }
 
