@@ -45,7 +45,8 @@ import {
     Eye,
     CreditCard,
     Smartphone,
-    Package
+    Package,
+    Code
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -126,6 +127,7 @@ type GridItem = {
     // Section-specific fields
     sectionBanners?: SectionBanner[];
     backgroundColor?: string;
+    textColor?: string;
     // Track original card IDs for deletion
     originalCardIds?: string[];
 };
@@ -244,7 +246,7 @@ function SortableItem({
         banner: <ImageIcon className="h-4 w-4" />,
         grid: <LayoutGrid className="h-4 w-4" />,
         list: <List className="h-4 w-4" />,
-        html: <Type className="h-4 w-4" />,
+        html: <Code className="h-4 w-4" />,
         carousel: <Layers className="h-4 w-4" />,
         "horizontal-list": <List className="h-4 w-4" />,
         section: <Package className="h-4 w-4" />,
@@ -259,7 +261,8 @@ function SortableItem({
                 isDragging && "opacity-50",
                 item.isNew && "border-dashed border-yellow-400",
                 item.type === "carousel" && "border-l-4 border-l-purple-500",
-                item.type === "grid" && "border-l-4 border-l-orange-500"
+                item.type === "grid" && "border-l-4 border-l-orange-500",
+                item.type === "html" && "border-l-4 border-l-cyan-500"
             )}
         >
             <div {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground">
@@ -794,6 +797,13 @@ function SectionEditor({
                     </div>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">Text Color</Label>
+                    <div className="col-span-3 flex gap-2">
+                        <Input type="color" value={editingItem.textColor || '#ffffff'} onChange={(e) => setEditingItem({ ...editingItem, textColor: e.target.value })} className="w-20 h-10 p-1" />
+                        <Input value={editingItem.textColor || '#ffffff'} onChange={(e) => setEditingItem({ ...editingItem, textColor: e.target.value })} placeholder="#ffffff" className="flex-1" />
+                    </div>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
                     <Label className="text-right">Grid Columns</Label>
                     <div className="col-span-3">
                         <Slider value={[editingItem.columns]} onValueChange={(v) => setEditingItem({ ...editingItem, columns: v[0] })} min={2} max={6} step={1} className="flex-1" />
@@ -959,6 +969,7 @@ export default function GridPage() {
                             imageUrl: sanitizeImageValue(sb.imageUrl),
                         })),
                         backgroundColor: item.config?.backgroundColor,
+                        textColor: item.config?.textColor,
                         originalCardIds, // Track for deletion
                     };
                 });
@@ -1107,6 +1118,7 @@ export default function GridPage() {
                                 displayMode: item.displayMode,
                                 showNewTag: item.showNewTag,
                                 backgroundColor: item.backgroundColor,
+                                textColor: item.textColor,
                                 gridItems: (item.gridItems || []).map(gi => ({
                                     ...gi,
                                     iconUrl: sanitizeImageValue(gi.iconUrl)
@@ -1144,6 +1156,8 @@ export default function GridPage() {
                                 showNewTag: item.showNewTag,
                                 images: (item.images || []).map(sanitizeImageValue).filter(Boolean),
                                 htmlContent: item.htmlContent,
+                                backgroundColor: item.backgroundColor,
+                                textColor: item.textColor,
                                 gridItems: (item.gridItems || []).map(gi => ({
                                     ...gi,
                                     iconUrl: sanitizeImageValue(gi.iconUrl)
@@ -1180,6 +1194,7 @@ export default function GridPage() {
                             images: (item.images || []).map(sanitizeImageValue).filter(Boolean),
                             htmlContent: item.htmlContent,
                             backgroundColor: item.backgroundColor,
+                            textColor: item.textColor,
                             gridItems: (item.gridItems || []).map(gi => ({
                                 ...gi,
                                 iconUrl: sanitizeImageValue(gi.iconUrl)
@@ -1319,6 +1334,7 @@ export default function GridPage() {
             gridItems: (type === 'grid' || type === 'list' || type === 'section') ? [] : undefined,
             sectionBanners: type === 'section' ? [] : undefined,
             backgroundColor: type === 'section' ? '#1a1a2e' : undefined,
+            textColor: type === 'section' ? '#ffffff' : undefined,
             originalCardIds: [],
         };
         setCurrentItems([...currentItems, newItem]);
@@ -1447,21 +1463,24 @@ export default function GridPage() {
                             <h3 className="mb-2 text-sm font-medium text-muted-foreground">
                                 Add to {activeUserType === "PRE_PAID" ? "Pre-Paid" : "Post-Paid"}
                             </h3>
-                            <div className="grid grid-cols-5 gap-2">
-                                <Button variant="outline" size="sm" onClick={() => addItem("carousel")} className="hover:bg-primary/10 hover:border-primary/50 hover-lift">
-                                    <Layers className="mr-1 h-3 w-3" /> Carousel
+                            <div className="grid grid-cols-3 gap-2">
+                                <Button variant="outline" size="sm" onClick={() => addItem("carousel")} className="hover:bg-primary/10 hover:border-primary/50 hover-lift justify-start">
+                                    <Layers className="mr-2 h-4 w-4" /> Carousel
                                 </Button>
-                                <Button variant="outline" size="sm" onClick={() => addItem("grid")} className="hover:bg-primary/10 hover:border-primary/50 hover-lift">
-                                    <LayoutGrid className="mr-1 h-3 w-3" /> Grid
+                                <Button variant="outline" size="sm" onClick={() => addItem("grid")} className="hover:bg-primary/10 hover:border-primary/50 hover-lift justify-start">
+                                    <LayoutGrid className="mr-2 h-4 w-4" /> Grid
                                 </Button>
-                                <Button variant="outline" size="sm" onClick={() => addItem("list")} className="hover:bg-primary/10 hover:border-primary/50 hover-lift">
-                                    <List className="mr-1 h-3 w-3" /> List
+                                <Button variant="outline" size="sm" onClick={() => addItem("list")} className="hover:bg-primary/10 hover:border-primary/50 hover-lift justify-start">
+                                    <List className="mr-2 h-4 w-4" /> List
                                 </Button>
-                                <Button variant="outline" size="sm" onClick={() => addItem("banner")} className="hover:bg-primary/10 hover:border-primary/50 hover-lift">
-                                    <ImageIcon className="mr-1 h-3 w-3" /> Banner
+                                <Button variant="outline" size="sm" onClick={() => addItem("banner")} className="hover:bg-primary/10 hover:border-primary/50 hover-lift justify-start">
+                                    <ImageIcon className="mr-2 h-4 w-4" /> Banner
                                 </Button>
-                                <Button variant="outline" size="sm" onClick={() => addItem("section")} className="hover:bg-primary/10 hover:border-primary/50 hover-lift">
-                                    <Package className="mr-1 h-3 w-3" /> Section
+                                <Button variant="outline" size="sm" onClick={() => addItem("section")} className="hover:bg-primary/10 hover:border-primary/50 hover-lift justify-start">
+                                    <Package className="mr-2 h-4 w-4" /> Section
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => addItem("html")} className="hover:bg-primary/10 hover:border-primary/50 hover-lift justify-start">
+                                    <Code className="mr-2 h-4 w-4" /> HTML
                                 </Button>
                             </div>
                         </div>
@@ -1682,12 +1701,12 @@ export default function GridPage() {
 
                                         {/* Section - Grid + Swipeable Banners */}
                                         {item.type === 'section' && (
-                                            <div className="-mx-3" style={{ backgroundColor: item.backgroundColor || '#1a1a2e' }}>
+                                            <div className="-mx-3" style={{ backgroundColor: item.backgroundColor || '#1a1a2e', color: item.textColor || '#ffffff' }}>
                                                 <div className="p-3">
                                                     {/* Section Title */}
                                                     {item.title && (
                                                         <div className="flex items-center justify-between mb-2">
-                                                            <p className="text-[10px] font-bold text-white text-center w-full">{item.title}</p>
+                                                            <p className="text-[10px] font-bold text-center w-full" style={{ color: item.textColor || '#ffffff' }}>{item.title}</p>
                                                             {item.showNewTag && <Badge className="text-[6px] h-3 px-1 bg-red-500 text-white absolute right-3">NEW</Badge>}
                                                         </div>
                                                     )}
@@ -1697,16 +1716,16 @@ export default function GridPage() {
                                                         <div className="grid gap-2 mb-3" style={{ gridTemplateColumns: `repeat(${item.columns || 4}, minmax(0, 1fr))` }}>
                                                             {item.gridItems.map((gi, i) => (
                                                                 <div key={gi.id || i} className="flex flex-col items-center text-center gap-1">
-                                                                    <div className="w-10 h-10 rounded-lg bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20 flex-shrink-0">
+                                                                    <div className="w-10 h-10 rounded-lg backdrop-blur-sm flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${item.textColor || '#ffffff'}15`, borderColor: `${item.textColor || '#ffffff'}30`, borderWidth: 1 }}>
                                                                         {gi.iconUrl ? (
                                                                             <img src={getImageUrl(gi.iconUrl)} className="w-6 h-6 object-contain" alt="" />
                                                                         ) : (
-                                                                            <Package className="h-4 w-4 text-white/60" />
+                                                                            <Package className="h-4 w-4" style={{ color: `${item.textColor || '#ffffff'}60` }} />
                                                                         )}
                                                                     </div>
                                                                     <div className="flex flex-col items-center w-full">
-                                                                        <p className="text-[6px] font-medium text-white leading-tight truncate w-full">{gi.title || 'Item'}</p>
-                                                                        {gi.subtitle && <p className="text-[5px] text-white/70 truncate w-full">{gi.subtitle}</p>}
+                                                                        <p className="text-[6px] font-medium leading-tight truncate w-full" style={{ color: item.textColor || '#ffffff' }}>{gi.title || 'Item'}</p>
+                                                                        {gi.subtitle && <p className="text-[5px] truncate w-full" style={{ color: `${item.textColor || '#ffffff'}99` }}>{gi.subtitle}</p>}
                                                                     </div>
                                                                 </div>
                                                             ))}
@@ -1724,8 +1743,8 @@ export default function GridPage() {
                                                                         {/* Labels above image - uniform height */}
                                                                         <div className="flex flex-col gap-0.5 mb-1 min-h-[28px]">
                                                                             <span className="text-[7px] font-bold text-yellow-400 uppercase tracking-wide h-[8px]">{banner.label || '\u00A0'}</span>
-                                                                            <span className="text-[10px] font-bold text-white leading-tight h-[12px]">{banner.title || '\u00A0'}</span>
-                                                                            <span className="text-[7px] text-gray-300 h-[8px]">{banner.tag || '\u00A0'}</span>
+                                                                            <span className="text-[10px] font-bold leading-tight h-[12px]" style={{ color: item.textColor || '#ffffff' }}>{banner.title || '\u00A0'}</span>
+                                                                            <span className="text-[7px] h-[8px]" style={{ color: `${item.textColor || '#ffffff'}99` }}>{banner.tag || '\u00A0'}</span>
                                                                         </div>
                                                                         {/* Banner image */}
                                                                         <div className="w-full aspect-[2/1] rounded-lg overflow-hidden relative bg-black/20">
@@ -1754,6 +1773,25 @@ export default function GridPage() {
                                                 </div>
                                             </div>
                                         )}
+
+                                        {/* HTML Content */}
+                                        {item.type === 'html' && (
+                                            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                                                {item.showNewTag && (
+                                                    <div className="flex items-center justify-between px-2 pt-2">
+                                                        <p className="text-[8px] font-medium text-muted-foreground">{item.title}</p>
+                                                        <Badge className="text-[5px] h-3 px-1 bg-red-500 text-white">NEW</Badge>
+                                                    </div>
+                                                )}
+                                                {!item.showNewTag && item.title && (
+                                                    <p className="text-[8px] font-medium text-muted-foreground px-2 pt-2">{item.title}</p>
+                                                )}
+                                                <div 
+                                                    className="p-2 text-[8px] [&>*]:max-w-full [&_img]:max-w-full [&_img]:h-auto"
+                                                    dangerouslySetInnerHTML={{ __html: item.htmlContent || '<p>No content</p>' }}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 ))
                             )}
@@ -1774,13 +1812,14 @@ export default function GridPage() {
 
             {/* Edit Dialog */}
             <Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
-                <DialogContent className={cn("max-h-[85vh] overflow-hidden flex flex-col", (editingItem?.type === 'carousel' || editingItem?.type === 'grid' || editingItem?.type === 'list') ? "max-w-2xl" : "max-w-md")}>
+                <DialogContent className={cn("max-h-[85vh] overflow-hidden flex flex-col", (editingItem?.type === 'carousel' || editingItem?.type === 'grid' || editingItem?.type === 'list' || editingItem?.type === 'html') ? "max-w-2xl" : "max-w-md")}>
                     <DialogHeader>
                         <DialogTitle>
                             {editingItem?.type === 'carousel' ? 'Edit Carousel' : 
                              editingItem?.type === 'grid' ? 'Edit Grid' : 
                              editingItem?.type === 'list' ? 'Edit List' : 
                              editingItem?.type === 'section' ? 'Edit Section' :
+                             editingItem?.type === 'html' ? 'Edit HTML Block' :
                              editingItem?.type === 'banner' ? 'Edit Banner' : 'Edit Component'}
                         </DialogTitle>
                         <DialogDescription>
@@ -1938,6 +1977,52 @@ export default function GridPage() {
                                     editingItem={editingItem} 
                                     setEditingItem={setEditingItem} 
                                 />
+                            ) : editingItem.type === 'html' ? (
+                                <div className="grid gap-4 py-4">
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <Label className="text-right">Title</Label>
+                                        <Input 
+                                            value={editingItem.title} 
+                                            onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })} 
+                                            className="col-span-3" 
+                                            placeholder="Optional title for the HTML block"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <Label className="text-right">NEW Tag</Label>
+                                        <div className="flex items-center space-x-2 col-span-3">
+                                            <Switch 
+                                                checked={editingItem.showNewTag || false} 
+                                                onCheckedChange={(checked) => setEditingItem({ ...editingItem, showNewTag: checked })} 
+                                            />
+                                            <Label>Show "NEW" badge</Label>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-4 items-start gap-4">
+                                        <Label className="text-right pt-2">HTML</Label>
+                                        <div className="col-span-3 space-y-2">
+                                            <Textarea 
+                                                value={editingItem.htmlContent || ''} 
+                                                onChange={(e) => setEditingItem({ ...editingItem, htmlContent: e.target.value })} 
+                                                className="font-mono text-sm min-h-[200px]"
+                                                placeholder="<div>Your HTML content here...</div>"
+                                            />
+                                            <p className="text-xs text-muted-foreground">
+                                                Enter raw HTML. Supports basic tags like div, p, span, img, a, etc.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {/* HTML Preview */}
+                                    <div className="grid grid-cols-4 items-start gap-4">
+                                        <Label className="text-right pt-2">Preview</Label>
+                                        <div className="col-span-3">
+                                            <div 
+                                                className="border rounded-lg p-3 bg-white min-h-[80px] text-sm [&>*]:max-w-full [&_img]:max-w-full [&_img]:h-auto"
+                                                dangerouslySetInnerHTML={{ __html: editingItem.htmlContent || '<p class="text-muted-foreground">No content to preview</p>' }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
                             ) : (
                                 <div className="grid gap-4 py-4">
                                     <div className="grid grid-cols-4 items-center gap-4">

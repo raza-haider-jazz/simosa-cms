@@ -200,6 +200,45 @@ export class CmsService {
             };
         }
 
+        // If it's a section, include grid items, banners, and styling
+        if (feature.type === 'section') {
+            const sectionBanners = config.sectionBanners || [];
+            return {
+                ...base,
+                style: {
+                    backgroundColor: config.backgroundColor || '#1a1a2e',
+                    textColor: config.textColor || '#ffffff',
+                },
+                columns: config.columns || 4,
+                items: (config.gridItems || []).map((item: any) => ({
+                    id: item.id,
+                    iconUrl: this.toFullImageUrl(item.iconUrl),
+                    title: item.title,
+                    subtitle: item.subtitle,
+                    ctaUrl: item.ctaUrl,
+                    showNewTag: item.showNewTag,
+                })),
+                banners: sectionBanners.map((banner: any) => ({
+                    id: banner.id,
+                    order: banner.order,
+                    imageUrl: this.toFullImageUrl(banner.imageUrl),
+                    label: banner.label,
+                    title: banner.title,
+                    tag: banner.tag,
+                    ctaUrl: banner.ctaUrl,
+                })),
+            };
+        }
+
+        // If it's an HTML block, include the HTML content
+        if (feature.type === 'html') {
+            return {
+                ...base,
+                htmlContent: config.htmlContent || '',
+                showNewTag: config.showNewTag || false,
+            };
+        }
+
         return base;
     }
 
