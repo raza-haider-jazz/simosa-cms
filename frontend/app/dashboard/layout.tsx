@@ -44,20 +44,22 @@ export default function DashboardLayout({
 
     return (
         <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-            <div className="hidden border-r bg-muted/40 md:block">
+            <div className="hidden border-r gradient-sidebar md:block shadow-lg">
                 <div className="flex h-full max-h-screen flex-col gap-2">
-                    <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-                        <Link href="/" className="flex items-center gap-2 font-semibold">
-                            <Package2 className="h-6 w-6" />
-                            <span className="">Simosa CMS</span>
+                    <div className="flex h-14 items-center border-b border-primary/20 px-4 lg:h-[60px] lg:px-6 bg-gradient-to-r from-primary/5 to-secondary/5">
+                        <Link href="/" className="flex items-center gap-2 font-bold text-primary">
+                            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md">
+                                <Package2 className="h-5 w-5 text-white" />
+                            </div>
+                            <span className="text-lg bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Simosa CMS</span>
                         </Link>
-                        <Button variant="outline" size="icon" className="ml-auto h-8 w-8">
-                            <Bell className="h-4 w-4" />
+                        <Button variant="outline" size="icon" className="ml-auto h-8 w-8 border-primary/30 hover:bg-primary/10 hover:border-primary/50">
+                            <Bell className="h-4 w-4 text-primary" />
                             <span className="sr-only">Toggle notifications</span>
                         </Button>
                     </div>
                     <div className="flex-1">
-                        <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+                        <nav className="grid items-start px-2 text-sm font-medium lg:px-4 gap-1">
                             {navItems.map((item) => {
                                 const isActive = pathname === item.href;
                                 return (
@@ -65,13 +67,13 @@ export default function DashboardLayout({
                                         key={item.href}
                                         href={item.href}
                                         className={cn(
-                                            "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
+                                            "flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all hover:text-primary hover-lift",
                                             isActive
-                                                ? "bg-muted text-primary"
-                                                : "text-muted-foreground"
+                                                ? "bg-gradient-to-r from-primary to-secondary text-white shadow-md font-semibold"
+                                                : "text-muted-foreground hover:bg-primary/5"
                                         )}
                                     >
-                                        <item.icon className="h-4 w-4" />
+                                        <item.icon className={cn("h-4 w-4", isActive && "animate-pulse")} />
                                         {item.label}
                                     </Link>
                                 );
@@ -81,7 +83,7 @@ export default function DashboardLayout({
                 </div>
             </div>
             <div className="flex flex-col">
-                <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+                <header className="flex h-14 items-center gap-4 border-b border-primary/20 bg-white/80 backdrop-blur-md px-4 lg:h-[60px] lg:px-6 shadow-sm">
                     <Sheet>
                         <SheetTrigger asChild>
                             <Button
@@ -132,8 +134,8 @@ export default function DashboardLayout({
                     </div>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="secondary" size="icon" className="rounded-full">
-                                <CircleUser className="h-5 w-5" />
+                            <Button variant="secondary" size="icon" className="rounded-full bg-gradient-to-br from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-md hover-lift">
+                                <CircleUser className="h-5 w-5 text-white" />
                                 <span className="sr-only">Toggle user menu</span>
                             </Button>
                         </DropdownMenuTrigger>
@@ -147,7 +149,7 @@ export default function DashboardLayout({
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </header>
-                <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+                <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-gradient-to-br from-background/50 to-transparent">
                     {children}
                 </main>
             </div>

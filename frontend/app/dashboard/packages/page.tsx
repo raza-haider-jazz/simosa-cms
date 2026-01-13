@@ -137,14 +137,17 @@ export default function PackagesPage() {
     return (
         <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
-                <h1 className="text-lg font-semibold md:text-2xl">Packages</h1>
+                <div>
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Packages</h1>
+                    <p className="text-sm text-muted-foreground mt-1">Manage your packages, prices, and visibility.</p>
+                </div>
                 <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                     <DialogTrigger asChild>
-                        <Button>
+                        <Button className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-md hover-lift">
                             <Plus className="mr-2 h-4 w-4" /> Add Package
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
+                    <DialogContent className="sm:max-w-[425px] gradient-card border-0">
                         <DialogHeader>
                             <DialogTitle>Add Package</DialogTitle>
                             <DialogDescription>
@@ -204,20 +207,22 @@ export default function PackagesPage() {
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button onClick={handleCreate}>Save changes</Button>
+                            <Button onClick={handleCreate} className="bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-md">
+                                Save changes
+                            </Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>All Packages</CardTitle>
+            <Card className="gradient-card border-0 shadow-md">
+                <CardHeader className="border-b border-primary/10">
+                    <CardTitle className="text-xl font-bold">All Packages</CardTitle>
                     <CardDescription>
-                        Manage your packages, prices, and visibility.
+                        View and manage all your application packages.
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-6">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -260,7 +265,10 @@ export default function PackagesPage() {
                                             {pkg.name}
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant={pkg.isActive ? "default" : "secondary"}>
+                                            <Badge 
+                                                variant={pkg.isActive ? "default" : "secondary"}
+                                                className={pkg.isActive ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-sm" : ""}
+                                            >
                                                 {pkg.isActive ? "Active" : "Draft"}
                                             </Badge>
                                         </TableCell>
@@ -277,15 +285,25 @@ export default function PackagesPage() {
                                                         aria-haspopup="true"
                                                         size="icon"
                                                         variant="ghost"
+                                                        className="hover:bg-primary/10 hover:text-primary"
                                                     >
                                                         <MoreHorizontal className="h-4 w-4" />
                                                         <span className="sr-only">Toggle menu</span>
                                                     </Button>
                                                 </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                    <DropdownMenuItem>Edit</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleDelete(pkg.id)} className="text-destructive">Delete</DropdownMenuItem>
+                                                <DropdownMenuContent align="end" className="gradient-card border-primary/20">
+                                                    <DropdownMenuLabel className="font-semibold">Actions</DropdownMenuLabel>
+                                                    <DropdownMenuItem className="hover:bg-primary/10 cursor-pointer">
+                                                        <Pencil className="mr-2 h-4 w-4" />
+                                                        Edit
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem 
+                                                        onClick={() => handleDelete(pkg.id)} 
+                                                        className="text-destructive hover:bg-destructive/10 cursor-pointer"
+                                                    >
+                                                        <Trash className="mr-2 h-4 w-4" />
+                                                        Delete
+                                                    </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>

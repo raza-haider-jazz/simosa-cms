@@ -1406,10 +1406,17 @@ export default function GridPage() {
     return (
         <div className="flex flex-col gap-6 md:flex-row h-[calc(100vh-100px)]">
             {/* Configuration Panel */}
-            <Card className="flex-1 overflow-hidden flex flex-col">
-                <CardHeader className="pb-3">
-                    <CardTitle>Dashboard Grid</CardTitle>
-                    <CardDescription>Configure layout separately for each user type</CardDescription>
+            <Card className="flex-1 overflow-hidden flex flex-col gradient-card border-0 shadow-md">
+                <CardHeader className="pb-3 border-b border-primary/10">
+                    <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md">
+                            <LayoutGrid className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-xl">Dashboard Grid</CardTitle>
+                            <CardDescription>Configure layout separately for each user type</CardDescription>
+                        </div>
+                    </div>
                     
                     {/* User Type Tabs - NO ALL OPTION */}
                     <div className="flex gap-2 mt-4">
@@ -1417,7 +1424,7 @@ export default function GridPage() {
                             variant={activeUserType === "PRE_PAID" ? "default" : "outline"}
                             size="sm"
                             onClick={() => setActiveUserType("PRE_PAID")}
-                            className={cn("flex-1", activeUserType === "PRE_PAID" && "bg-blue-600 hover:bg-blue-700")}
+                            className={cn("flex-1 hover-lift", activeUserType === "PRE_PAID" && "bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 shadow-md")}
                         >
                             <CreditCard className="h-4 w-4 mr-2" />
                             Pre-Paid ({prePaidItems.length})
@@ -1426,7 +1433,7 @@ export default function GridPage() {
                             variant={activeUserType === "POST_PAID" ? "default" : "outline"}
                             size="sm"
                             onClick={() => setActiveUserType("POST_PAID")}
-                            className={cn("flex-1", activeUserType === "POST_PAID" && "bg-green-600 hover:bg-green-700")}
+                            className={cn("flex-1 hover-lift", activeUserType === "POST_PAID" && "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-md")}
                         >
                             <Smartphone className="h-4 w-4 mr-2" />
                             Post-Paid ({postPaidItems.length})
@@ -1441,19 +1448,19 @@ export default function GridPage() {
                                 Add to {activeUserType === "PRE_PAID" ? "Pre-Paid" : "Post-Paid"}
                             </h3>
                             <div className="grid grid-cols-5 gap-2">
-                                <Button variant="outline" size="sm" onClick={() => addItem("carousel")}>
+                                <Button variant="outline" size="sm" onClick={() => addItem("carousel")} className="hover:bg-primary/10 hover:border-primary/50 hover-lift">
                                     <Layers className="mr-1 h-3 w-3" /> Carousel
                                 </Button>
-                                <Button variant="outline" size="sm" onClick={() => addItem("grid")}>
+                                <Button variant="outline" size="sm" onClick={() => addItem("grid")} className="hover:bg-primary/10 hover:border-primary/50 hover-lift">
                                     <LayoutGrid className="mr-1 h-3 w-3" /> Grid
                                 </Button>
-                                <Button variant="outline" size="sm" onClick={() => addItem("list")}>
+                                <Button variant="outline" size="sm" onClick={() => addItem("list")} className="hover:bg-primary/10 hover:border-primary/50 hover-lift">
                                     <List className="mr-1 h-3 w-3" /> List
                                 </Button>
-                                <Button variant="outline" size="sm" onClick={() => addItem("banner")}>
+                                <Button variant="outline" size="sm" onClick={() => addItem("banner")} className="hover:bg-primary/10 hover:border-primary/50 hover-lift">
                                     <ImageIcon className="mr-1 h-3 w-3" /> Banner
                                 </Button>
-                                <Button variant="outline" size="sm" onClick={() => addItem("section")}>
+                                <Button variant="outline" size="sm" onClick={() => addItem("section")} className="hover:bg-primary/10 hover:border-primary/50 hover-lift">
                                     <Package className="mr-1 h-3 w-3" /> Section
                                 </Button>
                             </div>
@@ -1487,7 +1494,7 @@ export default function GridPage() {
                             </DndContext>
                         </ScrollArea>
 
-                        <Button className="w-full" onClick={saveLayout} disabled={saving}>
+                        <Button className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-md hover-lift" onClick={saveLayout} disabled={saving}>
                             {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving...</> : <><Save className="mr-2 h-4 w-4" />Save Layout</>}
                         </Button>
                     </div>
@@ -1495,14 +1502,14 @@ export default function GridPage() {
             </Card>
 
             {/* Mobile Simulator */}
-            <div className="flex-1 flex flex-col items-center bg-muted/20 rounded-xl p-4">
+            <div className="flex-1 flex flex-col items-center gradient-card rounded-xl p-6 shadow-md border-0">
                 {/* Preview Toggle */}
-                <div className="mb-4 flex items-center gap-2 bg-background rounded-lg p-1 shadow-sm">
+                <div className="mb-4 flex items-center gap-2 bg-white rounded-lg p-1 shadow-sm">
                     <Button
                         variant={previewUserType === "PRE_PAID" ? "default" : "ghost"}
                         size="sm"
                         onClick={() => setPreviewUserType("PRE_PAID")}
-                        className={cn(previewUserType === "PRE_PAID" && "bg-blue-600")}
+                        className={cn("hover-lift", previewUserType === "PRE_PAID" && "bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 shadow-sm")}
                     >
                         <Eye className="h-3 w-3 mr-1" /> Pre-Paid
                     </Button>
@@ -1510,7 +1517,7 @@ export default function GridPage() {
                         variant={previewUserType === "POST_PAID" ? "default" : "ghost"}
                         size="sm"
                         onClick={() => setPreviewUserType("POST_PAID")}
-                        className={cn(previewUserType === "POST_PAID" && "bg-green-600")}
+                        className={cn("hover-lift", previewUserType === "POST_PAID" && "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-sm")}
                     >
                         <Eye className="h-3 w-3 mr-1" /> Post-Paid
                     </Button>

@@ -51,63 +51,83 @@ export default function NotificationsPage() {
     };
 
     return (
-        <div className="flex flex-col gap-4 max-w-2xl mx-auto w-full">
+        <div className="flex flex-col gap-6 max-w-2xl mx-auto w-full">
             <div className="flex items-center justify-between">
-                <h1 className="text-lg font-semibold md:text-2xl">Push Notifications</h1>
+                <div>
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Push Notifications</h1>
+                    <p className="text-sm text-muted-foreground mt-1">Send instant messages to your users</p>
+                </div>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Send Notification</CardTitle>
-                    <CardDescription>
-                        Broadcast a message to your users' devices.
-                    </CardDescription>
+            <Card className="gradient-card border-0 shadow-md">
+                <CardHeader className="border-b border-primary/10">
+                    <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md">
+                            <Bell className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-xl">Send Notification</CardTitle>
+                            <CardDescription>
+                                Broadcast a message to your users' devices.
+                            </CardDescription>
+                        </div>
+                    </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 pt-6">
                     <div className="grid gap-2">
-                        <Label htmlFor="title">Title</Label>
+                        <Label htmlFor="title" className="font-semibold">Title</Label>
                         <Input
                             id="title"
                             placeholder="e.g. New Summer Sale!"
                             value={form.title}
                             onChange={(e) => setForm({ ...form, title: e.target.value })}
+                            className="border-primary/20 focus:border-primary"
                         />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="message">Message</Label>
+                        <Label htmlFor="message" className="font-semibold">Message</Label>
                         <Textarea
                             id="message"
                             placeholder="Enter your notification body..."
                             value={form.body}
                             onChange={(e) => setForm({ ...form, body: e.target.value })}
+                            className="border-primary/20 focus:border-primary min-h-[120px]"
                         />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="target">Target Audience</Label>
+                        <Label htmlFor="target" className="font-semibold">Target Audience</Label>
                         <Select
                             value={form.targetType}
                             onValueChange={(val) => setForm({ ...form, targetType: val })}
                         >
-                            <SelectTrigger id="target">
+                            <SelectTrigger id="target" className="border-primary/20">
                                 <SelectValue placeholder="Select target" />
                             </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="segment">Specific Segment</SelectItem>
-                                <SelectItem value="specific">Specific User</SelectItem>
+                            <SelectContent className="gradient-card border-primary/20">
+                                <SelectItem value="all" className="hover:bg-primary/10">All Users</SelectItem>
+                                <SelectItem value="segment" className="hover:bg-primary/10">Specific Segment</SelectItem>
+                                <SelectItem value="specific" className="hover:bg-primary/10">Specific User</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                 </CardContent>
-                <CardFooter className="border-t px-6 py-4">
-                    <Button onClick={handleSend} disabled={loading} className="w-full sm:w-auto">
-                        <Send className="mr-2 h-4 w-4" /> Send Notification
+                <CardFooter className="border-t border-primary/10 px-6 py-4">
+                    <Button 
+                        onClick={handleSend} 
+                        disabled={loading} 
+                        className="w-full sm:w-auto bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-md hover-lift"
+                    >
+                        <Send className="mr-2 h-4 w-4" /> 
+                        {loading ? "Sending..." : "Send Notification"}
                     </Button>
                 </CardFooter>
             </Card>
 
-            <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 flex flex-col items-center justify-center text-center gap-2 min-h-[200px]">
-                <Bell className="h-10 w-10 text-muted-foreground" />
-                <h3 className="font-semibold">Recent Notifications</h3>
+            <div className="gradient-card rounded-xl shadow-md p-6 flex flex-col items-center justify-center text-center gap-3 min-h-[200px]">
+                <div className="h-16 w-16 rounded-full bg-gradient-to-br from-accent to-secondary/50 flex items-center justify-center">
+                    <Bell className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="font-bold text-lg">Recent Notifications</h3>
                 <p className="text-sm text-muted-foreground">History of sent notifications will appear here.</p>
             </div>
         </div>
