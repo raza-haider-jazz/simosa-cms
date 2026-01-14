@@ -224,8 +224,13 @@ export class CmsService {
                     imageUrl: this.toFullImageUrl(banner.imageUrl),
                     label: banner.label,
                     title: banner.title,
+                    subtitle: banner.subtitle,
                     tag: banner.tag,
-                    ctaUrl: banner.ctaUrl,
+                    cta: banner.ctaText ? {
+                        text: banner.ctaText,
+                        action: banner.ctaAction || 'navigate',
+                        url: banner.ctaUrl,
+                    } : null,
                 })),
             };
         }

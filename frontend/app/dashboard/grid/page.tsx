@@ -102,7 +102,10 @@ type SectionBanner = {
     imageUrl: string;
     label: string;
     title: string;
+    subtitle: string;
     tag: string;
+    ctaText: string;
+    ctaAction: string;
     ctaUrl: string;
 };
 
@@ -163,7 +166,10 @@ const emptySectionBanner: SectionBanner = {
     imageUrl: "",
     label: "",
     title: "",
+    subtitle: "",
     tag: "",
+    ctaText: "",
+    ctaAction: "navigate",
     ctaUrl: "",
 };
 
@@ -699,7 +705,7 @@ function SectionBannerEditor({
                 </div>
 
                 <div>
-                    <Label className="text-xs">Label</Label>
+                    <Label className="text-xs">Label (Small Caps)</Label>
                     <Input value={banner.label} onChange={(e) => onChange({ ...banner, label: e.target.value })} placeholder="TRENDING" className="h-8 text-sm" />
                 </div>
                 <div>
@@ -707,8 +713,30 @@ function SectionBannerEditor({
                     <Input value={banner.title} onChange={(e) => onChange({ ...banner, title: e.target.value })} placeholder="Main Title" className="h-8 text-sm" />
                 </div>
                 <div className="col-span-2">
+                    <Label className="text-xs">Subtitle</Label>
+                    <Input value={banner.subtitle} onChange={(e) => onChange({ ...banner, subtitle: e.target.value })} placeholder="Additional description text" className="h-8 text-sm" />
+                </div>
+                <div className="col-span-2">
                     <Label className="text-xs">Tag (Small)</Label>
-                    <Input value={banner.tag} onChange={(e) => onChange({ ...banner, tag: e.target.value })} placeholder="Subtitle" className="h-8 text-sm" />
+                    <Input value={banner.tag} onChange={(e) => onChange({ ...banner, tag: e.target.value })} placeholder="Limited time offer" className="h-8 text-sm" />
+                </div>
+                <div>
+                    <Label className="text-xs">CTA Text</Label>
+                    <Input value={banner.ctaText} onChange={(e) => onChange({ ...banner, ctaText: e.target.value })} placeholder="Learn More" className="h-8 text-sm" />
+                </div>
+                <div>
+                    <Label className="text-xs">CTA Action</Label>
+                    <Select value={banner.ctaAction || 'navigate'} onValueChange={(val) => onChange({ ...banner, ctaAction: val })}>
+                        <SelectTrigger className="h-8 text-sm">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="navigate">Navigate</SelectItem>
+                            <SelectItem value="webview">Webview</SelectItem>
+                            <SelectItem value="deeplink">Deeplink</SelectItem>
+                            <SelectItem value="external">External URL</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div className="col-span-2">
                     <Label className="text-xs">CTA URL</Label>
@@ -1740,15 +1768,23 @@ export default function GridPage() {
                                                                 const banner = item.sectionBanners[bannerIndex];
                                                                 return (
                                                                     <div className="w-full">
-                                                                        {/* Labels above image - uniform height */}
-                                                                        <div className="flex flex-col gap-0.5 mb-1 min-h-[28px]">
-                                                                            <span className="text-[7px] font-bold text-yellow-400 uppercase tracking-wide h-[8px]">{banner.label || '\u00A0'}</span>
-                                                                            <span className="text-[10px] font-bold leading-tight h-[12px]" style={{ color: item.textColor || '#ffffff' }}>{banner.title || '\u00A0'}</span>
-                                                                            <span className="text-[7px] h-[8px]" style={{ color: `${item.textColor || '#ffffff'}99` }}>{banner.tag || '\u00A0'}</span>
-                                                                        </div>
-                                                                        {/* Banner image */}
-                                                                        <div className="w-full aspect-[2/1] rounded-lg overflow-hidden relative bg-black/20">
-                                                                            {banner.imageUrl && <img src={getImageUrl(banner.imageUrl)} className="w-full h-full object-cover" alt="" />}
+                                                                        {/* Banner with text inside */}
+                                                                        <div className="w-full aspect-[2/1] rounded-lg overflow-hidden relative bg-gradient-to-br from-gray-800 to-gray-900">
+                                                                            {banner.imageUrl && <img src={getImageUrl(banner.imageUrl)} className="absolute inset-0 w-full h-full object-cover" alt="" />}
+                                                                            
+                                                                            {/* Text overlay inside banner */}
+                                                                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex flex-col justify-end p-2">
+                                                                                {banner.label && <span className="text-[6px] font-bold text-yellow-400 uppercase tracking-wide">{banner.label}</span>}
+                                                                                {banner.title && <span className="text-[9px] font-bold text-white leading-tight">{banner.title}</span>}
+                                                                                {banner.subtitle && <span className="text-[7px] text-white/90 leading-tight">{banner.subtitle}</span>}
+                                                                                {banner.tag && <span className="text-[6px] text-white/70 mt-0.5">{banner.tag}</span>}
+                                                                                {/* CTA Button */}
+                                                                                {banner.ctaText && (
+                                                                                    <span className="text-[6px] bg-white text-black px-1.5 py-0.5 rounded font-medium mt-1 self-start">{banner.ctaText}</span>
+                                                                                )}
+                                                                            </div>
+                                                                            
+                                                                            {/* Navigation arrows */}
                                                                             {item.sectionBanners.length > 1 && (
                                                                                 <>
                                                                                     <button onClick={() => prevPreviewCard(`${item.id}-section`, item.sectionBanners!.length)} className="absolute left-0.5 top-1/2 -translate-y-1/2 bg-black/30 rounded-full p-0.5">
