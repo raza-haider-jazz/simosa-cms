@@ -3,9 +3,15 @@
 import { useState, useEffect } from "react";
 import { Plus, Image as ImageIcon, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://unleached-paulette-noctilucent.ngrok-free.dev";
+
+// Headers for ngrok to skip browser warning
+const ngrokHeaders = {
+    'ngrok-skip-browser-warning': 'true',
+};
 
 export default function ContentPage() {
     const [contents, setContents] = useState<any[]>([]);
@@ -13,7 +19,7 @@ export default function ContentPage() {
     console.log(contents);
 
     useEffect(() => {
-        fetch("http://localhost:4000/content")
+        fetch(`${API_URL}/content`, { headers: ngrokHeaders })
             .then((res) => res.json())
             .then((data) => setContents(data))
             .catch((err) => console.error(err));

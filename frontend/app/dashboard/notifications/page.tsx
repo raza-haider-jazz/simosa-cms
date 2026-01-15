@@ -23,6 +23,13 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://unleached-paulette-noctilucent.ngrok-free.dev";
+
+// Headers for ngrok to skip browser warning
+const ngrokHeaders = {
+    'ngrok-skip-browser-warning': 'true',
+};
+
 export default function NotificationsPage() {
     const [loading, setLoading] = useState(false);
     const [form, setForm] = useState({
@@ -34,9 +41,9 @@ export default function NotificationsPage() {
     const handleSend = async () => {
         setLoading(true);
         try {
-            const res = await fetch("http://localhost:4000/notifications", {
+            const res = await fetch(`${API_URL}/notifications`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", ...ngrokHeaders },
                 body: JSON.stringify(form)
             });
             if (res.ok) {

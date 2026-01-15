@@ -67,7 +67,12 @@ import {
     TabsTrigger,
 } from "@/components/ui/tabs";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://unleached-paulette-noctilucent.ngrok-free.dev";
+
+// Headers for ngrok to skip browser warning
+const ngrokHeaders = {
+    'ngrok-skip-browser-warning': 'true',
+};
 
 // Only PRE_PAID and POST_PAID - no ALL option
 type UserType = "PRE_PAID" | "POST_PAID";
@@ -179,7 +184,7 @@ const emptySectionBanner: SectionBanner = {
     ctaUrl: "",
 };
 
-const API_URL_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const API_URL_BASE = process.env.NEXT_PUBLIC_API_URL || "https://unleached-paulette-noctilucent.ngrok-free.dev";
 
 // Upload a file and get back a URL
 const uploadFile = async (file: File): Promise<string> => {
@@ -215,7 +220,7 @@ const uploadBase64 = async (dataUrl: string): Promise<string> => {
     
     const response = await fetch(`${API_URL_BASE}/upload/base64`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
         body: JSON.stringify({ dataUrl }),
     });
     
@@ -953,14 +958,14 @@ export default function GridPage() {
     const loadGridItems = async () => {
         setLoading(true);
         try {
-            const screenRes = await fetch(`${API_URL}/screens/slug/dashboard`);
+            const screenRes = await fetch(`${API_URL}/screens/slug/dashboard`, { headers: ngrokHeaders });
             if (screenRes.ok) {
                 const screen = await screenRes.json();
                 setScreenId(screen.id);
             } else {
                 const createRes = await fetch(`${API_URL}/screens`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
                     body: JSON.stringify({ slug: 'dashboard', name: 'Dashboard', description: 'Main dashboard screen' })
                 });
                 if (createRes.ok) {
@@ -970,7 +975,7 @@ export default function GridPage() {
             }
 
             // Fetch all items including inactive for admin management
-            const res = await fetch(`${API_URL}/grid?includeInactive=true`);
+            const res = await fetch(`${API_URL}/grid?includeInactive=true`, { headers: ngrokHeaders });
             if (res.ok) {
                 const data = await res.json();
                 const mappedItems: GridItem[] = data.map((item: any) => {
@@ -1047,7 +1052,7 @@ export default function GridPage() {
             console.log('Saving layout with items:', allItems.length);
             
             // Include inactive items so we can update hidden items too
-            const existingRes = await fetch(`${API_URL}/grid?includeInactive=true`);
+            const existingRes = await fetch(`${API_URL}/grid?includeInactive=true`, { headers: ngrokHeaders });
             const existingItems = existingRes.ok ? await existingRes.json() : [];
             const existingIds = new Set(existingItems.map((i: any) => i.id));
             console.log('Existing items in DB:', existingItems.length);
@@ -1058,7 +1063,7 @@ export default function GridPage() {
             // Delete removed grid features
             for (const item of toDelete) {
                 console.log('Deleting grid feature:', item.id);
-                await fetch(`${API_URL}/grid/${item.id}`, { method: 'DELETE' });
+                await fetch(`${API_URL}/grid/${item.id}`, { method: 'DELETE', headers: ngrokHeaders });
             }
 
             // Reorder items per user type
@@ -1068,7 +1073,7 @@ export default function GridPage() {
             if (prePaidReorder.length > 0 || postPaidReorder.length > 0) {
                 await fetch(`${API_URL}/grid/reorder`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
                     body: JSON.stringify([...prePaidReorder, ...postPaidReorder])
                 });
             }
@@ -1113,7 +1118,7 @@ export default function GridPage() {
                     
                     const res = await fetch(`${API_URL}/grid/with-carousel`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
                         body: JSON.stringify(payload)
                     });
                     
@@ -1146,7 +1151,7 @@ export default function GridPage() {
                     
                     const res = await fetch(`${API_URL}/grid`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
                         body: JSON.stringify(payload)
                     });
                     
@@ -1162,7 +1167,7 @@ export default function GridPage() {
                     console.log('Creating section:', item.title, 'with', item.gridItems?.length || 0, 'grid items and', item.sectionBanners?.length || 0, 'banners');
                     const res = await fetch(`${API_URL}/grid`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
                         body: JSON.stringify({
                             title: item.title,
                             type: item.type,
@@ -1200,7 +1205,7 @@ export default function GridPage() {
                     console.log('Creating', item.type, ':', item.title);
                     const res = await fetch(`${API_URL}/grid`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
                         body: JSON.stringify({
                             title: item.title,
                             type: item.type,
@@ -1240,7 +1245,7 @@ export default function GridPage() {
                 // Update grid feature
                 const updateRes = await fetch(`${API_URL}/grid/${item.id}`, {
                     method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
                     body: JSON.stringify({
                         title: item.title,
                         type: item.type,
@@ -1278,7 +1283,7 @@ export default function GridPage() {
                     // Update carousel settings
                     await fetch(`${API_URL}/carousel/${item.carouselId}`, {
                         method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
                         body: JSON.stringify({
                             name: item.title,
                             autoPlay: item.autoPlay,
@@ -1299,7 +1304,7 @@ export default function GridPage() {
                     for (const originalId of originalIds) {
                         if (!currentCardIds.has(originalId)) {
                             console.log('Deleting card:', originalId);
-                            await fetch(`${API_URL}/carousel/cards/${originalId}`, { method: 'DELETE' });
+                            await fetch(`${API_URL}/carousel/cards/${originalId}`, { method: 'DELETE', headers: ngrokHeaders });
                         }
                     }
 
@@ -1328,7 +1333,7 @@ export default function GridPage() {
                             console.log('Updating card:', card.id);
                             const cardRes = await fetch(`${API_URL}/carousel/cards/${card.id}`, {
                                 method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json' },
+                                headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
                                 body: JSON.stringify(cardData)
                             });
                             if (!cardRes.ok) {
@@ -1339,7 +1344,7 @@ export default function GridPage() {
                             console.log('Creating new card for carousel:', item.carouselId);
                             const cardRes = await fetch(`${API_URL}/carousel/${item.carouselId}/cards`, {
                                 method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
+                                headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
                                 body: JSON.stringify(cardData)
                             });
                             if (!cardRes.ok) {

@@ -48,7 +48,12 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://unleached-paulette-noctilucent.ngrok-free.dev";
+
+// Headers for ngrok to skip browser warning
+const ngrokHeaders = {
+    'ngrok-skip-browser-warning': 'true',
+};
 
 type Package = {
     id: string;
@@ -69,15 +74,27 @@ type Category = {
     name: string;
 };
 
-const emptyPackage = {
+type PackagePeriod = "DAILY" | "WEEKLY" | "MONTHLY";
+
+const emptyPackage: {
+    name: string;
+    description: string;
+    price: string;
+    currency: string;
+    period: PackagePeriod;
+    categoryId: string;
+    imageUrl: string;
+    tags: string[];
+    isActive: boolean;
+} = {
     name: "",
     description: "",
     price: "",
     currency: "PKR",
-    period: "MONTHLY" as const,
+    period: "MONTHLY",
     categoryId: "",
     imageUrl: "",
-    tags: [] as string[],
+    tags: [],
     isActive: true,
 };
 
@@ -97,7 +114,7 @@ export default function PackagesPage() {
 
     const fetchPackages = async () => {
         try {
-            const res = await fetch(`${API_URL}/packages`);
+            const res = await fetch(`${API_URL}/packages`, { headers: ngrokHeaders });
             if (res.ok) {
                 const data = await res.json();
                 setPackages(data);
@@ -111,14 +128,14 @@ export default function PackagesPage() {
 
     const fetchCategories = async () => {
         try {
-            const res = await fetch(`${API_URL}/categories`);
+            const res = await fetch(`${API_URL}/categories`, { headers: ngrokHeaders });
             if (res.ok) {
                 const data = await res.json();
                 setCategories(data);
                 // If no categories, seed them
                 if (data.length === 0) {
-                    await fetch(`${API_URL}/categories/seed`, { method: 'POST' });
-                    const resAfterSeed = await fetch(`${API_URL}/categories`);
+                    await fetch(`${API_URL}/categories/seed`, { method: 'POST', headers: ngrokHeaders });
+                    const resAfterSeed = await fetch(`${API_URL}/categories`, { headers: ngrokHeaders });
                     if (resAfterSeed.ok) {
                         const seededData = await resAfterSeed.json();
                         setCategories(seededData);
@@ -149,7 +166,7 @@ export default function PackagesPage() {
                 // Upload to backend
                 const res = await fetch(`${API_URL}/upload/base64`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
                     body: JSON.stringify({ dataUrl: base64 }),
                 });
                 
@@ -179,7 +196,7 @@ export default function PackagesPage() {
 
             const res = await fetch(`${API_URL}/packages`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", ...ngrokHeaders },
                 body: JSON.stringify(payload),
             });
             
@@ -206,7 +223,7 @@ export default function PackagesPage() {
 
             const res = await fetch(`${API_URL}/packages/${editingPackage.id}`, {
                 method: "PATCH",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", ...ngrokHeaders },
                 body: JSON.stringify(payload),
             });
             
@@ -227,6 +244,7 @@ export default function PackagesPage() {
         try {
             const res = await fetch(`${API_URL}/packages/${id}`, {
                 method: "DELETE",
+                headers: ngrokHeaders,
             });
             if (res.ok) {
                 fetchPackages();
@@ -240,7 +258,7 @@ export default function PackagesPage() {
         try {
             const res = await fetch(`${API_URL}/packages/${pkg.id}`, {
                 method: "PATCH",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", ...ngrokHeaders },
                 body: JSON.stringify({ isActive: !pkg.isActive }),
             });
             if (res.ok) {

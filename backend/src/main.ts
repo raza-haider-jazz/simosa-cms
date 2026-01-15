@@ -14,7 +14,14 @@ async function bootstrap() {
   // Serve static files from uploads directory
   app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
   
-  app.enableCors();
+  // Enable CORS with permissive settings for ngrok and development
+  app.enableCors({
+    origin: true, // Allow all origins
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
+    credentials: true,
+  });
+  
   await app.listen(process.env.PORT ?? 4000);
 }
 bootstrap();
