@@ -237,7 +237,7 @@ const getImageUrl = (path: string): string => {
     if (!path) return '';
     if (path.startsWith('data:')) return path; // Still base64 (not yet saved)
     if (path.startsWith('http')) return path; // Already full URL
-    if (path.startsWith('/uploads')) return `${API_URL_BASE}${path}`;
+    if (path.startsWith('/uploads')) return `/api/proxy-image?path=${encodeURIComponent(path)}`;
     return path;
 };
 
