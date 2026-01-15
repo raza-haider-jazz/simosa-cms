@@ -18,6 +18,13 @@ enum UserType {
   ALL
 }
 
+// Package validity period
+enum PackagePeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -37,18 +44,19 @@ model Category {
 }
 
 model Package {
-  id          String   @id @default(uuid())
+  id          String        @id @default(uuid())
   name        String
   description String?
   price       Float?
-  currency    String   @default("USD")
-  category    Category @relation(fields: [categoryId], references: [id])
+  currency    String        @default("PKR")
+  period      PackagePeriod @default(MONTHLY)
+  category    Category      @relation(fields: [categoryId], references: [id])
   categoryId  String
   tags        String[]
   imageUrl    String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
 
 // Grid feature now supports user type targeting

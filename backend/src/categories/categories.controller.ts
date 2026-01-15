@@ -12,6 +12,11 @@ export class CategoriesController {
         return this.categoriesService.create(createCategoryDto);
     }
 
+    @Post('seed')
+    seedDefaults() {
+        return this.categoriesService.seedDefaults();
+    }
+
     @Get()
     findAll() {
         return this.categoriesService.findAll();

@@ -123,86 +123,58 @@ export class CmsService {
 
     /**
      * Transform a grid feature into clean JSON for Android
+     * Consistent response structure across all component types
      */
     private transformFeature(feature: any) {
-        // Transform images in config
-        const config = { ...feature.config };
-        if (config.images && Array.isArray(config.images)) {
-            config.images = config.images.map((img: string) => this.toFullImageUrl(img));
-        }
-        if (config.gridItems && Array.isArray(config.gridItems)) {
-            config.gridItems = config.gridItems.map((item: any) => ({
-                ...item,
-                iconUrl: this.toFullImageUrl(item.iconUrl),
-            }));
-        }
+        const config = feature.config || {};
 
+        // Base structure - consistent across all types
         const base = {
             id: feature.id,
             type: feature.type,
             title: feature.title,
             order: feature.order,
-            config: config,
         };
 
-        // If it's a carousel, include the cards
+        // Transform carousel component
         if (feature.type === 'carousel' && feature.carousel) {
             return {
                 ...base,
-                carousel: {
-                    id: feature.carousel.id,
-                    autoPlay: feature.carousel.autoPlay,
-                    interval: feature.carousel.interval,
-                    cards: feature.carousel.cards.map((card: any) => ({
-                        id: card.id,
-                        order: card.order,
-                        imageUrl: this.toFullImageUrl(card.imageUrl),
-                        title: card.title,
-                        subtitle: card.subtitle,
-                        description: card.description,
-                        price: card.price,
-                        currency: card.currency,
-                        cta: card.ctaText ? {
-                            text: card.ctaText,
-                            action: card.ctaAction,
-                            url: card.ctaUrl,
-                        } : null,
-                        style: {
-                            backgroundColor: card.backgroundColor,
-                            textColor: card.textColor,
-                        },
-                        metadata: card.metadata,
-                    })),
-                },
+                autoPlay: feature.carousel.autoPlay ?? true,
+                interval: feature.carousel.interval ?? 4000,
+                items: feature.carousel.cards.map((card: any) => this.transformCardItem(card)),
             };
         }
 
-        // If it's a grid with items, include them
-        if ((feature.type === 'grid' || feature.type === 'list') && config.gridItems) {
+        // Transform grid/list component
+        if (feature.type === 'grid' || feature.type === 'list') {
             return {
                 ...base,
-                items: config.gridItems.map((item: any) => ({
-                    id: item.id,
-                    iconUrl: this.toFullImageUrl(item.iconUrl),
-                    title: item.title,
-                    subtitle: item.subtitle,
-                    ctaUrl: item.ctaUrl,
-                    showNewTag: item.showNewTag,
-                })),
+                columns: config.columns || 4,
+                items: (config.gridItems || []).map((item: any) => this.transformGridItem(item)),
             };
         }
 
-        // If it's a banner, transform banner images
-        if (feature.type === 'banner' && config.images) {
+        // Transform standalone banner
+        if (feature.type === 'banner') {
             return {
                 ...base,
-                bannerImage: config.images[0] ? this.toFullImageUrl(config.images[0]) : null,
+                imageUrl: config.images?.[0] ? this.toFullImageUrl(config.images[0]) : null,
+                subtitle: config.subtitle || null,
+                showNewTag: config.showNewTag ?? false,
+                cta: config.ctaText ? {
+                    text: config.ctaText,
+                    action: config.ctaAction || 'navigate',
+                    url: config.ctaUrl,
+                } : null,
             };
         }
 
-        // If it's a section, include grid items, banners, and styling
+        // Transform section component (with grid items and optional banners)
         if (feature.type === 'section') {
             const sectionBanners = config.sectionBanners || [];
+            const transformedBanners = sectionBanners.map((banner: any) => this.transformBannerItem(banner));
+            
             return {
                 ...base,
                 style: {
@@ -210,36 +182,93 @@ export class CmsService {
                     textColor: config.textColor || '#ffffff',
                 },
                 columns: config.columns || 4,
-                items: (config.gridItems || []).map((item: any) => ({
-                    id: item.id,
-                    iconUrl: this.toFullImageUrl(item.iconUrl),
-                    title: item.title,
-                    subtitle: item.subtitle,
-                    ctaUrl: item.ctaUrl,
-                    showNewTag: item.showNewTag,
-                })),
-                banners: sectionBanners.map((banner: any) => ({
-                    id: banner.id,
-                    order: banner.order,
-                    imageUrl: this.toFullImageUrl(banner.imageUrl),
-                    label: banner.label,
-                    title: banner.title,
-                    tag: banner.tag,
-                    ctaUrl: banner.ctaUrl,
-                })),
+                items: (config.gridItems || []).map((item: any) => this.transformGridItem(item)),
+                // Dynamic banner structure based on count
+                ...(transformedBanners.length > 0 && {
+                    bannerSection: {
+                        type: transformedBanners.length > 1 ? 'carousel' : 'banner',
+                        autoPlay: transformedBanners.length > 1 ? (config.bannerAutoPlay ?? true) : undefined,
+                        interval: transformedBanners.length > 1 ? (config.bannerInterval ?? 4000) : undefined,
+                        items: transformedBanners,
+                    },
+                }),
             };
         }
 
-        // If it's an HTML block, include the HTML content
+        // Transform HTML block
         if (feature.type === 'html') {
             return {
                 ...base,
-                htmlContent: config.htmlContent || '',
-                showNewTag: config.showNewTag || false,
+                content: config.htmlContent || '',
+                showNewTag: config.showNewTag ?? false,
             };
         }
 
+        // Default fallback
         return base;
+    }
+
+    /**
+     * Transform a carousel card item - consistent structure
+     */
+    private transformCardItem(card: any) {
+        return {
+            id: card.id,
+            order: card.order,
+            imageUrl: this.toFullImageUrl(card.imageUrl),
+            title: card.title || null,
+            subtitle: card.subtitle || null,
+            description: card.description || null,
+            price: card.price ?? null,
+            currency: card.currency || null,
+            style: {
+                backgroundColor: card.backgroundColor || null,
+                textColor: card.textColor || null,
+            },
+            cta: card.ctaText ? {
+                text: card.ctaText,
+                action: card.ctaAction || 'navigate',
+                url: card.ctaUrl,
+            } : null,
+            metadata: card.metadata || null,
+        };
+    }
+
+    /**
+     * Transform a grid item - consistent structure
+     */
+    private transformGridItem(item: any) {
+        return {
+            id: item.id,
+            iconUrl: this.toFullImageUrl(item.iconUrl),
+            title: item.title || null,
+            subtitle: item.subtitle || null,
+            showNewTag: item.showNewTag ?? false,
+            cta: item.ctaUrl ? {
+                action: 'navigate',
+                url: item.ctaUrl,
+            } : null,
+        };
+    }
+
+    /**
+     * Transform a banner item - consistent structure
+     */
+    private transformBannerItem(banner: any) {
+        return {
+            id: banner.id,
+            order: banner.order ?? 0,
+            imageUrl: this.toFullImageUrl(banner.imageUrl),
+            label: banner.label || null,
+            title: banner.title || null,
+            subtitle: banner.subtitle || null,
+            tag: banner.tag || null,
+            cta: banner.ctaText ? {
+                text: banner.ctaText,
+                action: banner.ctaAction || 'navigate',
+                url: banner.ctaUrl,
+            } : null,
+        };
     }
 
     /**

@@ -36,8 +36,13 @@ export class GridService {
         });
     }
 
-    findAll(userType?: UserType, screenId?: string) {
-        const where: Prisma.GridFeatureWhereInput = { isActive: true };
+    findAll(userType?: UserType, screenId?: string, includeInactive?: boolean) {
+        const where: Prisma.GridFeatureWhereInput = {};
+        
+        // Only filter by isActive if not including inactive items (admin mode)
+        if (!includeInactive) {
+            where.isActive = true;
+        }
 
         // Only exact match - no OR with ALL
         if (userType && userType !== 'ALL') {
@@ -55,7 +60,7 @@ export class GridService {
                 carousel: {
                     include: {
                         cards: {
-                            where: { isActive: true },
+                            where: includeInactive ? {} : { isActive: true },
                             orderBy: { order: 'asc' },
                         },
                     },

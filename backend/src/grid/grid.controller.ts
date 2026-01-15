@@ -54,8 +54,9 @@ export class GridController {
     findAll(
         @Query('userType') userType?: UserType,
         @Query('screenId') screenId?: string,
+        @Query('includeInactive') includeInactive?: string,
     ) {
-        return this.gridService.findAll(userType, screenId);
+        return this.gridService.findAll(userType, screenId, includeInactive === 'true');
     }
 
     @Get('screen/:slug')

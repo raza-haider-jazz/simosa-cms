@@ -43,6 +43,7 @@ import {
     ChevronLeft,
     ChevronRight,
     Eye,
+    EyeOff,
     CreditCard,
     Smartphone,
     Package,
@@ -78,6 +79,7 @@ type GridItemContent = {
     subtitle: string;
     ctaUrl: string;
     showNewTag?: boolean;
+    show?: boolean;
 };
 
 type CarouselCard = {
@@ -94,6 +96,7 @@ type CarouselCard = {
     ctaUrl: string;
     backgroundColor: string;
     textColor: string;
+    show?: boolean;
 };
 
 type SectionBanner = {
@@ -102,13 +105,18 @@ type SectionBanner = {
     imageUrl: string;
     label: string;
     title: string;
+    subtitle: string;
     tag: string;
+    ctaText: string;
+    ctaAction: string;
     ctaUrl: string;
+    show?: boolean;
 };
 
 type GridItem = {
     id: string;
     title: string;
+    subtitle?: string;
     type: "banner" | "list" | "html" | "grid" | "carousel" | "horizontal-list" | "section";
     columns: number;
     displayMode: "list" | "grid";
@@ -119,6 +127,7 @@ type GridItem = {
     userType: UserType;
     config?: any;
     isNew?: boolean;
+    show?: boolean;
     carouselId?: string;
     carouselCards?: CarouselCard[];
     autoPlay?: boolean;
@@ -163,7 +172,10 @@ const emptySectionBanner: SectionBanner = {
     imageUrl: "",
     label: "",
     title: "",
+    subtitle: "",
     tag: "",
+    ctaText: "",
+    ctaAction: "navigate",
     ctaUrl: "",
 };
 
@@ -233,11 +245,13 @@ const sanitizeImageValue = (value: any): string => {
 function SortableItem({
     item,
     onRemove,
-    onEdit
+    onEdit,
+    onToggleVisibility
 }: {
     item: GridItem;
     onRemove: (id: string) => void;
     onEdit: (item: GridItem) => void;
+    onToggleVisibility: (id: string) => void;
 }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
     const style = { transform: CSS.Transform.toString(transform), transition };
@@ -260,6 +274,7 @@ function SortableItem({
                 "flex items-center gap-3 rounded-lg border bg-card p-3 shadow-sm group",
                 isDragging && "opacity-50",
                 item.isNew && "border-dashed border-yellow-400",
+                item.show === false && "opacity-50 bg-muted/50",
                 item.type === "carousel" && "border-l-4 border-l-purple-500",
                 item.type === "grid" && "border-l-4 border-l-orange-500",
                 item.type === "html" && "border-l-4 border-l-cyan-500"
@@ -271,8 +286,9 @@ function SortableItem({
             <div className="flex-1">
                 <div className="flex items-center gap-2">
                     {typeIcon[item.type]}
-                    <span className="font-medium">{item.title}</span>
+                    <span className={cn("font-medium", item.show === false && "line-through text-muted-foreground")}>{item.title}</span>
                     {item.isNew && <Badge variant="outline" className="text-[10px] h-5 px-1 bg-yellow-50 text-yellow-700">UNSAVED</Badge>}
+                    {item.show === false && <Badge variant="outline" className="text-[10px] h-5 px-1 bg-gray-100 text-gray-500">HIDDEN</Badge>}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground uppercase mt-1">
                     <Badge variant="outline" className="text-[10px] h-5">{item.type}</Badge>
@@ -294,6 +310,14 @@ function SortableItem({
                 </div>
             </div>
             <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => onToggleVisibility(item.id)}
+                    title={item.show === false ? "Show component" : "Hide component"}
+                >
+                    {item.show === false ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4" />}
+                </Button>
                 <Button variant="ghost" size="icon" onClick={() => onEdit(item)}>
                     <Settings2 className="h-4 w-4" />
                 </Button>
@@ -572,7 +596,11 @@ function BannerEditor({
         <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right">Title</Label>
-                <Input value={editingItem.title} onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })} className="col-span-3" />
+                <Input value={editingItem.title} onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })} className="col-span-3" placeholder="Banner title" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Subtitle</Label>
+                <Input value={editingItem.subtitle || ''} onChange={(e) => setEditingItem({ ...editingItem, subtitle: e.target.value })} className="col-span-3" placeholder="Optional subtitle text" />
             </div>
             <div className="grid grid-cols-4 items-start gap-4">
                 <Label className="text-right pt-2">Banner Image</Label>
@@ -699,7 +727,7 @@ function SectionBannerEditor({
                 </div>
 
                 <div>
-                    <Label className="text-xs">Label</Label>
+                    <Label className="text-xs">Label (Small Caps)</Label>
                     <Input value={banner.label} onChange={(e) => onChange({ ...banner, label: e.target.value })} placeholder="TRENDING" className="h-8 text-sm" />
                 </div>
                 <div>
@@ -707,8 +735,30 @@ function SectionBannerEditor({
                     <Input value={banner.title} onChange={(e) => onChange({ ...banner, title: e.target.value })} placeholder="Main Title" className="h-8 text-sm" />
                 </div>
                 <div className="col-span-2">
+                    <Label className="text-xs">Subtitle</Label>
+                    <Input value={banner.subtitle} onChange={(e) => onChange({ ...banner, subtitle: e.target.value })} placeholder="Additional description text" className="h-8 text-sm" />
+                </div>
+                <div className="col-span-2">
                     <Label className="text-xs">Tag (Small)</Label>
-                    <Input value={banner.tag} onChange={(e) => onChange({ ...banner, tag: e.target.value })} placeholder="Subtitle" className="h-8 text-sm" />
+                    <Input value={banner.tag} onChange={(e) => onChange({ ...banner, tag: e.target.value })} placeholder="Limited time offer" className="h-8 text-sm" />
+                </div>
+                <div>
+                    <Label className="text-xs">CTA Text</Label>
+                    <Input value={banner.ctaText} onChange={(e) => onChange({ ...banner, ctaText: e.target.value })} placeholder="Learn More" className="h-8 text-sm" />
+                </div>
+                <div>
+                    <Label className="text-xs">CTA Action</Label>
+                    <Select value={banner.ctaAction || 'navigate'} onValueChange={(val) => onChange({ ...banner, ctaAction: val })}>
+                        <SelectTrigger className="h-8 text-sm">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="navigate">Navigate</SelectItem>
+                            <SelectItem value="webview">Webview</SelectItem>
+                            <SelectItem value="deeplink">Deeplink</SelectItem>
+                            <SelectItem value="external">External URL</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div className="col-span-2">
                     <Label className="text-xs">CTA URL</Label>
@@ -895,8 +945,8 @@ export default function GridPage() {
     const currentItems = activeUserType === "PRE_PAID" ? prePaidItems : postPaidItems;
     const setCurrentItems = activeUserType === "PRE_PAID" ? setPrePaidItems : setPostPaidItems;
 
-    // Get items for preview
-    const previewItems = previewUserType === "PRE_PAID" ? prePaidItems : postPaidItems;
+    // Get items for preview - filter out hidden items (show: false)
+    const previewItems = (previewUserType === "PRE_PAID" ? prePaidItems : postPaidItems).filter(item => item.show !== false);
 
     useEffect(() => { loadGridItems(); }, []);
 
@@ -919,7 +969,8 @@ export default function GridPage() {
                 }
             }
 
-            const res = await fetch(`${API_URL}/grid`);
+            // Fetch all items including inactive for admin management
+            const res = await fetch(`${API_URL}/grid?includeInactive=true`);
             if (res.ok) {
                 const data = await res.json();
                 const mappedItems: GridItem[] = data.map((item: any) => {
@@ -929,6 +980,7 @@ export default function GridPage() {
                     return {
                         id: item.id,
                         title: item.title,
+                        subtitle: item.config?.subtitle || "",
                         type: item.type,
                         columns: item.config?.columns || 2,
                         displayMode: item.config?.displayMode || "grid",
@@ -940,6 +992,7 @@ export default function GridPage() {
                         userType: item.userType === "ALL" ? "PRE_PAID" : item.userType,
                         config: item.config,
                         isNew: false,
+                        show: item.isActive !== false, // Map backend isActive to frontend show
                         carouselId: item.carouselId,
                         carouselCards: item.carousel?.cards?.map((c: any) => ({
                             id: c.id,
@@ -955,6 +1008,7 @@ export default function GridPage() {
                             ctaUrl: c.ctaUrl || "",
                             backgroundColor: c.backgroundColor || "#1a365d",
                             textColor: c.textColor || "#ffffff",
+                            show: c.isActive !== false,
                         })) || [],
                         autoPlay: item.carousel?.autoPlay ?? true,
                         interval: item.carousel?.interval ?? 5000,
@@ -992,7 +1046,8 @@ export default function GridPage() {
             const allItems = [...prePaidItems, ...postPaidItems];
             console.log('Saving layout with items:', allItems.length);
             
-            const existingRes = await fetch(`${API_URL}/grid`);
+            // Include inactive items so we can update hidden items too
+            const existingRes = await fetch(`${API_URL}/grid?includeInactive=true`);
             const existingItems = existingRes.ok ? await existingRes.json() : [];
             const existingIds = new Set(existingItems.map((i: any) => i.id));
             console.log('Existing items in DB:', existingItems.length);
@@ -1033,7 +1088,7 @@ export default function GridPage() {
                         order: orderIndex,
                         userType: item.userType,
                         screenId: screenId,
-                        config: { showNewTag: item.showNewTag },
+                        config: { showNewTag: item.showNewTag, subtitle: item.subtitle },
                         carousel: {
                             name: item.title,
                             autoPlay: item.autoPlay ?? true,
@@ -1082,6 +1137,7 @@ export default function GridPage() {
                             columns: item.columns,
                             displayMode: item.displayMode,
                             showNewTag: item.showNewTag,
+                            subtitle: item.subtitle,
                             images: item.images,
                             htmlContent: item.htmlContent,
                             gridItems: item.gridItems,
@@ -1117,6 +1173,7 @@ export default function GridPage() {
                                 columns: item.columns,
                                 displayMode: item.displayMode,
                                 showNewTag: item.showNewTag,
+                                subtitle: item.subtitle,
                                 backgroundColor: item.backgroundColor,
                                 textColor: item.textColor,
                                 gridItems: (item.gridItems || []).map(gi => ({
@@ -1154,6 +1211,7 @@ export default function GridPage() {
                                 columns: item.columns,
                                 displayMode: item.displayMode,
                                 showNewTag: item.showNewTag,
+                                subtitle: item.subtitle,
                                 images: (item.images || []).map(sanitizeImageValue).filter(Boolean),
                                 htmlContent: item.htmlContent,
                                 backgroundColor: item.backgroundColor,
@@ -1187,10 +1245,12 @@ export default function GridPage() {
                         title: item.title,
                         type: item.type,
                         userType: item.userType,
+                        isActive: item.show !== false, // Send visibility status to backend
                         config: {
                             columns: item.columns,
                             displayMode: item.displayMode,
                             showNewTag: item.showNewTag,
+                            subtitle: item.subtitle,
                             images: (item.images || []).map(sanitizeImageValue).filter(Boolean),
                             htmlContent: item.htmlContent,
                             backgroundColor: item.backgroundColor,
@@ -1328,6 +1388,7 @@ export default function GridPage() {
             order: currentItems.length,
             userType: activeUserType,
             isNew: true,
+            show: true, // New items are visible by default
             carouselCards: type === 'carousel' ? [] : undefined,
             autoPlay: type === 'carousel' ? true : undefined,
             interval: type === 'carousel' ? 5000 : undefined,
@@ -1343,6 +1404,12 @@ export default function GridPage() {
     };
 
     const removeItem = (id: string) => setCurrentItems(currentItems.filter((item) => item.id !== id));
+
+    const toggleVisibility = (id: string) => {
+        setCurrentItems(currentItems.map(item => 
+            item.id === id ? { ...item, show: item.show === false ? true : false } : item
+        ));
+    };
 
     const updateItem = (updated: GridItem) => {
         setCurrentItems(currentItems.map(i => i.id === updated.id ? updated : i));
@@ -1502,7 +1569,7 @@ export default function GridPage() {
                                             </div>
                                         ) : (
                                             currentItems.map((item) => (
-                                                <SortableItem key={item.id} item={item} onRemove={removeItem} onEdit={setEditingItem} />
+                                                <SortableItem key={item.id} item={item} onRemove={removeItem} onEdit={setEditingItem} onToggleVisibility={toggleVisibility} />
                                             ))
                                         )}
                                     </div>
@@ -1560,7 +1627,11 @@ export default function GridPage() {
                                         {item.type === 'banner' && (
                                             <div className="w-full aspect-[2/1] bg-slate-200 rounded-lg flex items-center justify-center relative overflow-hidden shadow-sm">
                                                 {item.images[0] ? <img src={getImageUrl(item.images[0])} className="w-full h-full object-cover" alt="" /> : <ImageIcon className="text-slate-400 h-6 w-6" />}
-                                                <div className="absolute bottom-1.5 left-1.5 bg-black/50 text-white text-[10px] px-1.5 rounded">{item.title}</div>
+                                                {/* Text overlay inside banner */}
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex flex-col justify-end p-2">
+                                                    {item.title && <p className="text-[10px] font-semibold text-white leading-tight">{item.title}</p>}
+                                                    {item.subtitle && <p className="text-[8px] text-white/90 leading-tight">{item.subtitle}</p>}
+                                                </div>
                                                 {item.showNewTag && (
                                                     <Badge className="absolute top-1.5 right-1.5 text-[6px] h-4 px-1.5 bg-red-500 text-white">NEW</Badge>
                                                 )}
@@ -1741,15 +1812,23 @@ export default function GridPage() {
                                                                 const banner = item.sectionBanners[bannerIndex];
                                                                 return (
                                                                     <div className="w-full">
-                                                                        {/* Labels above image - uniform height */}
-                                                                        <div className="flex flex-col gap-0.5 mb-1 min-h-[28px]">
-                                                                            <span className="text-[7px] font-bold text-yellow-400 uppercase tracking-wide h-[8px]">{banner.label || '\u00A0'}</span>
-                                                                            <span className="text-[10px] font-bold leading-tight h-[12px]" style={{ color: item.textColor || '#ffffff' }}>{banner.title || '\u00A0'}</span>
-                                                                            <span className="text-[7px] h-[8px]" style={{ color: `${item.textColor || '#ffffff'}99` }}>{banner.tag || '\u00A0'}</span>
-                                                                        </div>
-                                                                        {/* Banner image */}
-                                                                        <div className="w-full aspect-[2/1] rounded-lg overflow-hidden relative bg-black/20">
-                                                                            {banner.imageUrl && <img src={getImageUrl(banner.imageUrl)} className="w-full h-full object-cover" alt="" />}
+                                                                        {/* Banner with text inside */}
+                                                                        <div className="w-full aspect-[2/1] rounded-lg overflow-hidden relative bg-gradient-to-br from-gray-800 to-gray-900">
+                                                                            {banner.imageUrl && <img src={getImageUrl(banner.imageUrl)} className="absolute inset-0 w-full h-full object-cover" alt="" />}
+                                                                            
+                                                                            {/* Text overlay inside banner */}
+                                                                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex flex-col justify-end p-2">
+                                                                                {banner.label && <span className="text-[6px] font-bold text-yellow-400 uppercase tracking-wide">{banner.label}</span>}
+                                                                                {banner.title && <span className="text-[9px] font-bold text-white leading-tight">{banner.title}</span>}
+                                                                                {banner.subtitle && <span className="text-[7px] text-white/90 leading-tight">{banner.subtitle}</span>}
+                                                                                {banner.tag && <span className="text-[6px] text-white/70 mt-0.5">{banner.tag}</span>}
+                                                                                {/* CTA Button */}
+                                                                                {banner.ctaText && (
+                                                                                    <span className="text-[6px] bg-white text-black px-1.5 py-0.5 rounded font-medium mt-1 self-start">{banner.ctaText}</span>
+                                                                                )}
+                                                                            </div>
+                                                                            
+                                                                            {/* Navigation arrows */}
                                                                             {item.sectionBanners.length > 1 && (
                                                                                 <>
                                                                                     <button onClick={() => prevPreviewCard(`${item.id}-section`, item.sectionBanners!.length)} className="absolute left-0.5 top-1/2 -translate-y-1/2 bg-black/30 rounded-full p-0.5">
