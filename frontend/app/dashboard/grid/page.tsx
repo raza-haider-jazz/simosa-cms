@@ -1722,6 +1722,7 @@ export default function GridPage() {
                                                                         ) : (
                                                                             <Package className="h-4 w-4" style={{ color: `${item.textColor || '#ffffff'}60` }} />
                                                                         )}
+                                                                        
                                                                     </div>
                                                                     <div className="flex flex-col items-center w-full">
                                                                         <p className="text-[6px] font-medium leading-tight truncate w-full" style={{ color: item.textColor || '#ffffff' }}>{gi.title || 'Item'}</p>

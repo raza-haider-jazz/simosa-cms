@@ -6,6 +6,7 @@ import { UserType } from '@prisma/client';
  * Headless CMS API for Android app consumption
  * Returns JSON data based on user type
  */
+
 @Controller('api/cms')
 export class CmsController {
     constructor(private readonly cmsService: CmsService) { }
