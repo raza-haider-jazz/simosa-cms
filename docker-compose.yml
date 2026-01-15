@@ -1,6 +1,8 @@
 version: '3.8'
+
 services:
-  postgres:s
+  # PostgreSQL Database
+  postgres:
     image: postgres:15-alpine
     container_name: simosa_cms_db
     environment:
@@ -11,6 +13,56 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - simosa_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend (NestJS API)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: simosa_cms_backend
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/simosa_cms
+      NODE_ENV: production
+      PORT: 4000
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./backend/uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - simosa_network
+    restart: unless-stopped
+    command: sh -c "npx prisma migrate deploy && npm run start:prod"
+
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: simosa_cms_frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:4000
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - simosa_network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
+
+networks:
+  simosa_network:
+    driver: bridge
