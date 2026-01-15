@@ -1,4 +1,10 @@
-import { IsString, IsOptional, IsNumber, IsBoolean, IsArray, IsUrl } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsBoolean, IsArray, IsEnum } from 'class-validator';
+
+export enum PackagePeriod {
+    DAILY = 'DAILY',
+    WEEKLY = 'WEEKLY',
+    MONTHLY = 'MONTHLY',
+}
 
 export class CreatePackageDto {
     @IsString()
@@ -13,6 +19,14 @@ export class CreatePackageDto {
     price?: number;
 
     @IsString()
+    @IsOptional()
+    currency?: string;
+
+    @IsEnum(PackagePeriod)
+    @IsOptional()
+    period?: PackagePeriod;
+
+    @IsString()
     categoryId: string;
 
     @IsArray()
@@ -20,7 +34,7 @@ export class CreatePackageDto {
     @IsOptional()
     tags?: string[];
 
-    @IsUrl()
+    @IsString()
     @IsOptional()
     imageUrl?: string;
 
