@@ -16,7 +16,9 @@ import {
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
     useSortable,
+    rectSortingStrategy,
 } from "@dnd-kit/sortable";
+import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -67,7 +69,7 @@ import {
     TabsTrigger,
 } from "@/components/ui/tabs";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://unleached-paulette-noctilucent.ngrok-free.dev";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 // Headers for ngrok to skip browser warning
 const ngrokHeaders = {
@@ -184,7 +186,7 @@ const emptySectionBanner: SectionBanner = {
     ctaUrl: "",
 };
 
-const API_URL_BASE = process.env.NEXT_PUBLIC_API_URL || "https://unleached-paulette-noctilucent.ngrok-free.dev";
+const API_URL_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 // Upload a file and get back a URL
 const uploadFile = async (file: File): Promise<string> => {
@@ -334,8 +336,8 @@ function SortableItem({
     );
 }
 
-// Carousel Card Editor
-function CarouselCardEditor({
+// Sortable Carousel Card Editor
+function SortableCarouselCard({
     card,
     index,
     onChange,
@@ -346,6 +348,8 @@ function CarouselCardEditor({
     onChange: (card: CarouselCard) => void;
     onRemove: () => void;
 }) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: card.id });
+    const style = { transform: CSS.Transform.toString(transform), transition };
     const [uploading, setUploading] = React.useState(false);
     
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -366,9 +370,18 @@ function CarouselCardEditor({
     };
 
     return (
-        <div className="border rounded-lg p-4 space-y-4 bg-muted/20">
+        <div
+            ref={setNodeRef}
+            style={style}
+            className={cn("border rounded-lg p-4 space-y-4 bg-muted/20", isDragging && "opacity-50 shadow-lg")}
+        >
             <div className="flex items-center justify-between">
-                <h4 className="font-medium text-sm">Card {index + 1}</h4>
+                <div className="flex items-center gap-2">
+                    <div {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground">
+                        <GripVertical className="h-4 w-4" />
+                    </div>
+                    <h4 className="font-medium text-sm">Card {index + 1}</h4>
+                </div>
                 <Button variant="ghost" size="sm" onClick={onRemove} className="text-destructive h-8">
                     <Trash2 className="h-3 w-3 mr-1" /> Remove
                 </Button>
@@ -471,8 +484,8 @@ function CarouselCardEditor({
     );
 }
 
-// Grid Item Editor (for items inside a grid)
-function GridItemEditor({
+// Sortable Grid Item Editor (for items inside a grid)
+function SortableGridItemEditor({
     item,
     index,
     onChange,
@@ -483,6 +496,8 @@ function GridItemEditor({
     onChange: (item: GridItemContent) => void;
     onRemove: () => void;
 }) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+    const style = { transform: CSS.Transform.toString(transform), transition };
     const [uploading, setUploading] = React.useState(false);
     
     const handleIconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -503,11 +518,20 @@ function GridItemEditor({
     };
 
     return (
-        <div className="border rounded-lg p-3 space-y-3 bg-muted/20">
+        <div
+            ref={setNodeRef}
+            style={style}
+            className={cn("border rounded-lg p-3 space-y-3 bg-muted/20", isDragging && "opacity-50 shadow-lg")}
+        >
             <div className="flex items-center justify-between">
-                <h4 className="font-medium text-sm flex items-center gap-2">
-                    <Package className="h-4 w-4" /> Item {index + 1}
-                </h4>
+                <div className="flex items-center gap-2">
+                    <div {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground">
+                        <GripVertical className="h-4 w-4" />
+                    </div>
+                    <h4 className="font-medium text-sm flex items-center gap-2">
+                        <Package className="h-4 w-4" /> Item {index + 1}
+                    </h4>
+                </div>
                 <Button variant="ghost" size="sm" onClick={onRemove} className="text-destructive h-7">
                     <Trash2 className="h-3 w-3" />
                 </Button>
@@ -658,8 +682,8 @@ function BannerEditor({
     );
 }
 
-// Section Banner Editor (for banners within a section)
-function SectionBannerEditor({
+// Sortable Section Banner Editor (for banners within a section)
+function SortableSectionBannerEditor({
     banner,
     index,
     onChange,
@@ -670,6 +694,8 @@ function SectionBannerEditor({
     onChange: (banner: SectionBanner) => void;
     onRemove: () => void;
 }) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: banner.id });
+    const style = { transform: CSS.Transform.toString(transform), transition };
     const [uploading, setUploading] = React.useState(false);
     
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -690,9 +716,18 @@ function SectionBannerEditor({
     };
 
     return (
-        <div className="border rounded-lg p-4 space-y-3 bg-muted/20">
+        <div
+            ref={setNodeRef}
+            style={style}
+            className={cn("border rounded-lg p-4 space-y-3 bg-muted/20", isDragging && "opacity-50 shadow-lg")}
+        >
             <div className="flex items-center justify-between">
-                <h4 className="font-medium text-sm">Banner {index + 1}</h4>
+                <div className="flex items-center gap-2">
+                    <div {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground">
+                        <GripVertical className="h-4 w-4" />
+                    </div>
+                    <h4 className="font-medium text-sm">Banner {index + 1}</h4>
+                </div>
                 <Button variant="ghost" size="sm" onClick={onRemove} className="text-destructive h-8">
                     <Trash2 className="h-3 w-3 mr-1" /> Remove
                 </Button>
@@ -782,6 +817,11 @@ function SectionEditor({
     editingItem: GridItem;
     setEditingItem: (item: GridItem) => void;
 }) {
+    const sectionSensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    );
+
     const addSectionBanner = () => {
         const newBanner: SectionBanner = {
             ...emptySectionBanner,
@@ -807,6 +847,16 @@ function SectionEditor({
         }
     };
 
+    const handleBannerDragEnd = (event: any) => {
+        const { active, over } = event;
+        if (active.id !== over?.id && editingItem.sectionBanners) {
+            const oldIndex = editingItem.sectionBanners.findIndex((b) => b.id === active.id);
+            const newIndex = editingItem.sectionBanners.findIndex((b) => b.id === over?.id);
+            const newBanners = arrayMove(editingItem.sectionBanners, oldIndex, newIndex);
+            setEditingItem({ ...editingItem, sectionBanners: newBanners });
+        }
+    };
+
     const addGridItem = () => {
         const newGridItem: GridItemContent = {
             ...emptyGridItem,
@@ -827,6 +877,16 @@ function SectionEditor({
         if (editingItem.gridItems) {
             const newItems = [...editingItem.gridItems];
             newItems.splice(index, 1);
+            setEditingItem({ ...editingItem, gridItems: newItems });
+        }
+    };
+
+    const handleGridItemDragEnd = (event: any) => {
+        const { active, over } = event;
+        if (active.id !== over?.id && editingItem.gridItems) {
+            const oldIndex = editingItem.gridItems.findIndex((g) => g.id === active.id);
+            const newIndex = editingItem.gridItems.findIndex((g) => g.id === over?.id);
+            const newItems = arrayMove(editingItem.gridItems, oldIndex, newIndex);
             setEditingItem({ ...editingItem, gridItems: newItems });
         }
     };
@@ -875,23 +935,32 @@ function SectionEditor({
                     </Button>
                 </div>
                 <ScrollArea className="h-[400px]">
-                    <div className="space-y-3 pr-4">
-                        {editingItem.gridItems?.map((item, index) => (
-                            <GridItemEditor
-                                key={item.id}
-                                item={item}
-                                index={index}
-                                onChange={(updated) => updateGridItem(index, updated)}
-                                onRemove={() => removeGridItem(index)}
-                            />
-                        ))}
-                        {(!editingItem.gridItems || editingItem.gridItems.length === 0) && (
-                            <div className="text-center text-muted-foreground py-8">
-                                <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                <p className="text-sm">No grid items yet</p>
+                    <DndContext
+                        sensors={sectionSensors}
+                        collisionDetection={closestCenter}
+                        modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+                        onDragEnd={handleGridItemDragEnd}
+                    >
+                        <SortableContext items={editingItem.gridItems?.map(g => g.id) || []} strategy={verticalListSortingStrategy}>
+                            <div className="space-y-3 pr-4">
+                                {editingItem.gridItems?.map((item, index) => (
+                                    <SortableGridItemEditor
+                                        key={item.id}
+                                        item={item}
+                                        index={index}
+                                        onChange={(updated) => updateGridItem(index, updated)}
+                                        onRemove={() => removeGridItem(index)}
+                                    />
+                                ))}
+                                {(!editingItem.gridItems || editingItem.gridItems.length === 0) && (
+                                    <div className="text-center text-muted-foreground py-8">
+                                        <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                        <p className="text-sm">No grid items yet</p>
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
+                        </SortableContext>
+                    </DndContext>
                 </ScrollArea>
             </TabsContent>
 
@@ -903,23 +972,32 @@ function SectionEditor({
                     </Button>
                 </div>
                 <ScrollArea className="h-[400px]">
-                    <div className="space-y-3 pr-4">
-                        {editingItem.sectionBanners?.map((banner, index) => (
-                            <SectionBannerEditor
-                                key={banner.id}
-                                banner={banner}
-                                index={index}
-                                onChange={(updated) => updateSectionBanner(index, updated)}
-                                onRemove={() => removeSectionBanner(index)}
-                            />
-                        ))}
-                        {(!editingItem.sectionBanners || editingItem.sectionBanners.length === 0) && (
-                            <div className="text-center text-muted-foreground py-8">
-                                <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                <p className="text-sm">No banners yet</p>
+                    <DndContext
+                        sensors={sectionSensors}
+                        collisionDetection={closestCenter}
+                        modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+                        onDragEnd={handleBannerDragEnd}
+                    >
+                        <SortableContext items={editingItem.sectionBanners?.map(b => b.id) || []} strategy={verticalListSortingStrategy}>
+                            <div className="space-y-3 pr-4">
+                                {editingItem.sectionBanners?.map((banner, index) => (
+                                    <SortableSectionBannerEditor
+                                        key={banner.id}
+                                        banner={banner}
+                                        index={index}
+                                        onChange={(updated) => updateSectionBanner(index, updated)}
+                                        onRemove={() => removeSectionBanner(index)}
+                                    />
+                                ))}
+                                {(!editingItem.sectionBanners || editingItem.sectionBanners.length === 0) && (
+                                    <div className="text-center text-muted-foreground py-8">
+                                        <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                        <p className="text-sm">No banners yet</p>
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
+                        </SortableContext>
+                    </DndContext>
                 </ScrollArea>
             </TabsContent>
         </Tabs>
@@ -1047,314 +1125,45 @@ export default function GridPage() {
     const saveLayout = async () => {
         setSaving(true);
         try {
-            // Combine all items
-            const allItems = [...prePaidItems, ...postPaidItems];
-            console.log('Saving layout with items:', allItems.length);
+            console.log('Saving layout with items:', prePaidItems.length + postPaidItems.length);
             
-            // Include inactive items so we can update hidden items too
-            const existingRes = await fetch(`${API_URL}/grid?includeInactive=true`, { headers: ngrokHeaders });
-            const existingItems = existingRes.ok ? await existingRes.json() : [];
-            const existingIds = new Set(existingItems.map((i: any) => i.id));
-            console.log('Existing items in DB:', existingItems.length);
+            // Prepare items with sanitized image values
+            const sanitizeItems = (items: GridItem[]) => items.map(item => ({
+                ...item,
+                images: (item.images || []).map(sanitizeImageValue).filter(Boolean),
+                gridItems: (item.gridItems || []).map(gi => ({
+                    ...gi,
+                    iconUrl: sanitizeImageValue(gi.iconUrl)
+                })),
+                sectionBanners: (item.sectionBanners || []).map(sb => ({
+                    ...sb,
+                    imageUrl: sanitizeImageValue(sb.imageUrl)
+                })),
+                carouselCards: (item.carouselCards || []).map(card => ({
+                    ...card,
+                    imageUrl: sanitizeImageValue(card.imageUrl)
+                })),
+            }));
 
-            const currentIds = new Set(allItems.filter(i => !i.isNew).map(i => i.id));
-            const toDelete = existingItems.filter((i: any) => !currentIds.has(i.id));
+            // Single API call to save everything + notify Firebase
+            const res = await fetch(`${API_URL}/grid/save-layout`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
+                body: JSON.stringify({
+                    prePaidItems: sanitizeItems(prePaidItems),
+                    postPaidItems: sanitizeItems(postPaidItems),
+                    screenId: screenId,
+                })
+            });
 
-            // Delete removed grid features
-            for (const item of toDelete) {
-                console.log('Deleting grid feature:', item.id);
-                await fetch(`${API_URL}/grid/${item.id}`, { method: 'DELETE', headers: ngrokHeaders });
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error('Failed to save layout:', res.status, errorText);
+                throw new Error(`Failed to save layout: ${res.status} ${errorText}`);
             }
 
-            // Reorder items per user type
-            const prePaidReorder = prePaidItems.filter(i => !i.isNew && existingIds.has(i.id)).map((item, index) => ({ id: item.id, order: index }));
-            const postPaidReorder = postPaidItems.filter(i => !i.isNew && existingIds.has(i.id)).map((item, index) => ({ id: item.id, order: index }));
-            
-            if (prePaidReorder.length > 0 || postPaidReorder.length > 0) {
-                await fetch(`${API_URL}/grid/reorder`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
-                    body: JSON.stringify([...prePaidReorder, ...postPaidReorder])
-                });
-            }
-
-            // Create new items
-            const newItems = allItems.filter(i => i.isNew);
-            console.log('New items to create:', newItems.length);
-            
-            for (const item of newItems) {
-                const items = item.userType === "PRE_PAID" ? prePaidItems : postPaidItems;
-                const orderIndex = items.findIndex(it => it.id === item.id);
-                
-                if (item.type === 'carousel') {
-                    console.log('Creating carousel:', item.title, 'with', item.carouselCards?.length || 0, 'cards');
-                    const payload = {
-                        title: item.title,
-                        order: orderIndex,
-                        userType: item.userType,
-                        screenId: screenId,
-                        config: { showNewTag: item.showNewTag, subtitle: item.subtitle },
-                        carousel: {
-                            name: item.title,
-                            autoPlay: item.autoPlay ?? true,
-                            interval: item.interval ?? 5000,
-                            cards: (item.carouselCards || []).map((card, idx) => ({
-                                order: idx,
-                                imageUrl: sanitizeImageValue(card.imageUrl),
-                                title: card.title,
-                                subtitle: card.subtitle,
-                                description: card.description,
-                                price: card.price,
-                                currency: card.currency,
-                                ctaText: card.ctaText,
-                                ctaAction: card.ctaAction,
-                                ctaUrl: card.ctaUrl,
-                                backgroundColor: card.backgroundColor,
-                                textColor: card.textColor,
-                                userType: item.userType,
-                            }))
-                        }
-                    };
-                    
-                    const res = await fetch(`${API_URL}/grid/with-carousel`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
-                        body: JSON.stringify(payload)
-                    });
-                    
-                    if (!res.ok) {
-                        const errorText = await res.text();
-                        console.error('Failed to create carousel:', res.status, errorText);
-                        throw new Error(`Failed to create carousel: ${res.status} ${errorText}`);
-                    }
-                    
-                    const created = await res.json();
-                    console.log('Created carousel:', created.id, 'carouselId:', created.carouselId);
-                } else if (item.type === 'grid') {
-                    console.log('Creating grid:', item.title, 'with', item.gridItems?.length || 0, 'items');
-                    const payload = {
-                        title: item.title,
-                        type: item.type,
-                        order: orderIndex,
-                        userType: item.userType,
-                        screenId: screenId,
-                        config: {
-                            columns: item.columns,
-                            displayMode: item.displayMode,
-                            showNewTag: item.showNewTag,
-                            subtitle: item.subtitle,
-                            images: item.images,
-                            htmlContent: item.htmlContent,
-                            gridItems: item.gridItems,
-                        }
-                    };
-                    
-                    const res = await fetch(`${API_URL}/grid`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
-                        body: JSON.stringify(payload)
-                    });
-                    
-                    if (!res.ok) {
-                        const errorText = await res.text();
-                        console.error('Failed to create grid:', res.status, errorText);
-                        throw new Error(`Failed to create grid: ${res.status} ${errorText}`);
-                    }
-                    
-                    const created = await res.json();
-                    console.log('Created grid:', created.id);
-                } else if (item.type === 'section') {
-                    console.log('Creating section:', item.title, 'with', item.gridItems?.length || 0, 'grid items and', item.sectionBanners?.length || 0, 'banners');
-                    const res = await fetch(`${API_URL}/grid`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
-                        body: JSON.stringify({
-                            title: item.title,
-                            type: item.type,
-                            order: orderIndex,
-                            userType: item.userType,
-                            screenId: screenId,
-                            config: {
-                                columns: item.columns,
-                                displayMode: item.displayMode,
-                                showNewTag: item.showNewTag,
-                                subtitle: item.subtitle,
-                                backgroundColor: item.backgroundColor,
-                                textColor: item.textColor,
-                                gridItems: (item.gridItems || []).map(gi => ({
-                                    ...gi,
-                                    iconUrl: sanitizeImageValue(gi.iconUrl)
-                                })),
-                                sectionBanners: (item.sectionBanners || []).map(sb => ({
-                                    ...sb,
-                                    imageUrl: sanitizeImageValue(sb.imageUrl)
-                                })),
-                            }
-                        })
-                    });
-                    
-                    if (!res.ok) {
-                        const errorText = await res.text();
-                        console.error('Failed to create section:', res.status, errorText);
-                        throw new Error(`Failed to create section: ${res.status} ${errorText}`);
-                    }
-                    
-                    const created = await res.json();
-                    console.log('Created section:', created.id);
-                } else {
-                    console.log('Creating', item.type, ':', item.title);
-                    const res = await fetch(`${API_URL}/grid`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
-                        body: JSON.stringify({
-                            title: item.title,
-                            type: item.type,
-                            order: orderIndex,
-                            userType: item.userType,
-                            screenId: screenId,
-                            config: {
-                                columns: item.columns,
-                                displayMode: item.displayMode,
-                                showNewTag: item.showNewTag,
-                                subtitle: item.subtitle,
-                                images: (item.images || []).map(sanitizeImageValue).filter(Boolean),
-                                htmlContent: item.htmlContent,
-                                backgroundColor: item.backgroundColor,
-                                textColor: item.textColor,
-                                gridItems: (item.gridItems || []).map(gi => ({
-                                    ...gi,
-                                    iconUrl: sanitizeImageValue(gi.iconUrl)
-                                })),
-                            }
-                        })
-                    });
-                    
-                    if (!res.ok) {
-                        const errorText = await res.text();
-                        console.error('Failed to create item:', res.status, errorText);
-                        throw new Error(`Failed to create item: ${res.status} ${errorText}`);
-                    }
-                }
-            }
-
-            // Update existing items
-            const existingToUpdate = allItems.filter(i => !i.isNew && existingIds.has(i.id));
-            console.log('Existing items to update:', existingToUpdate.length);
-            
-            for (const item of existingToUpdate) {
-                // Update grid feature
-                const updateRes = await fetch(`${API_URL}/grid/${item.id}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
-                    body: JSON.stringify({
-                        title: item.title,
-                        type: item.type,
-                        userType: item.userType,
-                        isActive: item.show !== false, // Send visibility status to backend
-                        config: {
-                            columns: item.columns,
-                            displayMode: item.displayMode,
-                            showNewTag: item.showNewTag,
-                            subtitle: item.subtitle,
-                            images: (item.images || []).map(sanitizeImageValue).filter(Boolean),
-                            htmlContent: item.htmlContent,
-                            backgroundColor: item.backgroundColor,
-                            textColor: item.textColor,
-                            gridItems: (item.gridItems || []).map(gi => ({
-                                ...gi,
-                                iconUrl: sanitizeImageValue(gi.iconUrl)
-                            })),
-                            sectionBanners: item.type === 'section' ? (item.sectionBanners || []).map(sb => ({
-                                ...sb,
-                                imageUrl: sanitizeImageValue(sb.imageUrl)
-                            })) : undefined,
-                        }
-                    })
-                });
-                
-                if (!updateRes.ok) {
-                    console.error('Failed to update grid feature:', item.id);
-                }
-
-                // Handle carousel updates
-                if (item.type === 'carousel' && item.carouselId) {
-                    console.log('Updating carousel:', item.carouselId, 'with', item.carouselCards?.length || 0, 'cards');
-                    
-                    // Update carousel settings
-                    await fetch(`${API_URL}/carousel/${item.carouselId}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
-                        body: JSON.stringify({
-                            name: item.title,
-                            autoPlay: item.autoPlay,
-                            interval: item.interval,
-                            userType: item.userType,
-                        })
-                    });
-
-                    // Get current card IDs in local state (non-temp)
-                    const currentCardIds = new Set(
-                        (item.carouselCards || [])
-                            .filter(c => c.id && !c.id.startsWith('temp-'))
-                            .map(c => c.id)
-                    );
-
-                    // Delete cards that were removed (compare with originalCardIds)
-                    const originalIds = item.originalCardIds || [];
-                    for (const originalId of originalIds) {
-                        if (!currentCardIds.has(originalId)) {
-                            console.log('Deleting card:', originalId);
-                            await fetch(`${API_URL}/carousel/cards/${originalId}`, { method: 'DELETE', headers: ngrokHeaders });
-                        }
-                    }
-
-                    // Update or create cards
-                    const cards = item.carouselCards || [];
-                    for (let idx = 0; idx < cards.length; idx++) {
-                        const card = cards[idx];
-                        const cardData = {
-                            order: idx,
-                            imageUrl: sanitizeImageValue(card.imageUrl),
-                            title: card.title,
-                            subtitle: card.subtitle,
-                            description: card.description,
-                            price: card.price,
-                            currency: card.currency,
-                            ctaText: card.ctaText,
-                            ctaAction: card.ctaAction,
-                            ctaUrl: card.ctaUrl,
-                            backgroundColor: card.backgroundColor,
-                            textColor: card.textColor,
-                            userType: item.userType,
-                        };
-
-                        if (card.id && !card.id.startsWith('temp-')) {
-                            // Update existing card
-                            console.log('Updating card:', card.id);
-                            const cardRes = await fetch(`${API_URL}/carousel/cards/${card.id}`, {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
-                                body: JSON.stringify(cardData)
-                            });
-                            if (!cardRes.ok) {
-                                console.error('Failed to update card:', card.id);
-                            }
-                        } else {
-                            // Create new card
-                            console.log('Creating new card for carousel:', item.carouselId);
-                            const cardRes = await fetch(`${API_URL}/carousel/${item.carouselId}/cards`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
-                                body: JSON.stringify(cardData)
-                            });
-                            if (!cardRes.ok) {
-                                const errorText = await cardRes.text();
-                                console.error('Failed to create card:', cardRes.status, errorText);
-                            }
-                        }
-                    }
-                }
-            }
+            const result = await res.json();
+            console.log('Save result:', result);
 
             // Reload to get fresh data with proper IDs
             console.log('Reloading grid items...');
@@ -1947,20 +1756,37 @@ export default function GridPage() {
                                     
                                     <TabsContent value="cards" className="mt-4">
                                         <ScrollArea className="h-[400px] pr-4">
-                                            <div className="space-y-4">
-                                                {editingItem.carouselCards?.map((card, index) => (
-                                                    <CarouselCardEditor
-                                                        key={card.id || index}
-                                                        card={card}
-                                                        index={index}
-                                                        onChange={(updated) => updateCarouselCard(index, updated)}
-                                                        onRemove={() => removeCarouselCard(index)}
-                                                    />
-                                                ))}
-                                                <Button variant="outline" className="w-full" onClick={addCarouselCard}>
-                                                    <Plus className="h-4 w-4 mr-2" />Add Card
-                                                </Button>
-                                            </div>
+                                            <DndContext
+                                                sensors={sensors}
+                                                collisionDetection={closestCenter}
+                                                modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+                                                onDragEnd={(event) => {
+                                                    const { active, over } = event;
+                                                    if (active.id !== over?.id && editingItem.carouselCards) {
+                                                        const oldIndex = editingItem.carouselCards.findIndex((c) => c.id === active.id);
+                                                        const newIndex = editingItem.carouselCards.findIndex((c) => c.id === over?.id);
+                                                        const newCards = arrayMove(editingItem.carouselCards, oldIndex, newIndex);
+                                                        setEditingItem({ ...editingItem, carouselCards: newCards });
+                                                    }
+                                                }}
+                                            >
+                                                <SortableContext items={editingItem.carouselCards?.map(c => c.id) || []} strategy={verticalListSortingStrategy}>
+                                                    <div className="space-y-4">
+                                                        {editingItem.carouselCards?.map((card, index) => (
+                                                            <SortableCarouselCard
+                                                                key={card.id || index}
+                                                                card={card}
+                                                                index={index}
+                                                                onChange={(updated) => updateCarouselCard(index, updated)}
+                                                                onRemove={() => removeCarouselCard(index)}
+                                                            />
+                                                        ))}
+                                                        <Button variant="outline" className="w-full" onClick={addCarouselCard}>
+                                                            <Plus className="h-4 w-4 mr-2" />Add Card
+                                                        </Button>
+                                                    </div>
+                                                </SortableContext>
+                                            </DndContext>
                                         </ScrollArea>
                                     </TabsContent>
                                 </Tabs>
@@ -1994,20 +1820,37 @@ export default function GridPage() {
                                     
                                     <TabsContent value="items" className="mt-4">
                                         <ScrollArea className="h-[400px] pr-4">
-                                            <div className="space-y-3">
-                                                {editingItem.gridItems?.map((item, index) => (
-                                                    <GridItemEditor
-                                                        key={item.id || index}
-                                                        item={item}
-                                                        index={index}
-                                                        onChange={(updated) => updateGridItem(index, updated)}
-                                                        onRemove={() => removeGridItem(index)}
-                                                    />
-                                                ))}
-                                                <Button variant="outline" className="w-full" onClick={addGridItem}>
-                                                    <Plus className="h-4 w-4 mr-2" />Add Grid Item
-                                                </Button>
-                                            </div>
+                                            <DndContext
+                                                sensors={sensors}
+                                                collisionDetection={closestCenter}
+                                                modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+                                                onDragEnd={(event) => {
+                                                    const { active, over } = event;
+                                                    if (active.id !== over?.id && editingItem.gridItems) {
+                                                        const oldIndex = editingItem.gridItems.findIndex((g) => g.id === active.id);
+                                                        const newIndex = editingItem.gridItems.findIndex((g) => g.id === over?.id);
+                                                        const newItems = arrayMove(editingItem.gridItems, oldIndex, newIndex);
+                                                        setEditingItem({ ...editingItem, gridItems: newItems });
+                                                    }
+                                                }}
+                                            >
+                                                <SortableContext items={editingItem.gridItems?.map(g => g.id) || []} strategy={verticalListSortingStrategy}>
+                                                    <div className="space-y-3">
+                                                        {editingItem.gridItems?.map((item, index) => (
+                                                            <SortableGridItemEditor
+                                                                key={item.id || index}
+                                                                item={item}
+                                                                index={index}
+                                                                onChange={(updated) => updateGridItem(index, updated)}
+                                                                onRemove={() => removeGridItem(index)}
+                                                            />
+                                                        ))}
+                                                        <Button variant="outline" className="w-full" onClick={addGridItem}>
+                                                            <Plus className="h-4 w-4 mr-2" />Add Grid Item
+                                                        </Button>
+                                                    </div>
+                                                </SortableContext>
+                                            </DndContext>
                                         </ScrollArea>
                                     </TabsContent>
                                 </Tabs>
@@ -2034,20 +1877,37 @@ export default function GridPage() {
                                     
                                     <TabsContent value="items" className="mt-4">
                                         <ScrollArea className="h-[400px] pr-4">
-                                            <div className="space-y-3">
-                                                {editingItem.gridItems?.map((item, index) => (
-                                                    <GridItemEditor
-                                                        key={item.id || index}
-                                                        item={item}
-                                                        index={index}
-                                                        onChange={(updated) => updateGridItem(index, updated)}
-                                                        onRemove={() => removeGridItem(index)}
-                                                    />
-                                                ))}
-                                                <Button variant="outline" className="w-full" onClick={addGridItem}>
-                                                    <Plus className="h-4 w-4 mr-2" />Add List Item
-                                                </Button>
-                                            </div>
+                                            <DndContext
+                                                sensors={sensors}
+                                                collisionDetection={closestCenter}
+                                                modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+                                                onDragEnd={(event) => {
+                                                    const { active, over } = event;
+                                                    if (active.id !== over?.id && editingItem.gridItems) {
+                                                        const oldIndex = editingItem.gridItems.findIndex((g) => g.id === active.id);
+                                                        const newIndex = editingItem.gridItems.findIndex((g) => g.id === over?.id);
+                                                        const newItems = arrayMove(editingItem.gridItems, oldIndex, newIndex);
+                                                        setEditingItem({ ...editingItem, gridItems: newItems });
+                                                    }
+                                                }}
+                                            >
+                                                <SortableContext items={editingItem.gridItems?.map(g => g.id) || []} strategy={verticalListSortingStrategy}>
+                                                    <div className="space-y-3">
+                                                        {editingItem.gridItems?.map((item, index) => (
+                                                            <SortableGridItemEditor
+                                                                key={item.id || index}
+                                                                item={item}
+                                                                index={index}
+                                                                onChange={(updated) => updateGridItem(index, updated)}
+                                                                onRemove={() => removeGridItem(index)}
+                                                            />
+                                                        ))}
+                                                        <Button variant="outline" className="w-full" onClick={addGridItem}>
+                                                            <Plus className="h-4 w-4 mr-2" />Add List Item
+                                                        </Button>
+                                                    </div>
+                                                </SortableContext>
+                                            </DndContext>
                                         </ScrollArea>
                                     </TabsContent>
                                 </Tabs>
