@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://unleached-paulette-noctilucent.ngrok-free.dev";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 // Headers for ngrok to skip browser warning
 const ngrokHeaders = {

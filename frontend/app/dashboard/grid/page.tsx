@@ -69,7 +69,7 @@ import {
     TabsTrigger,
 } from "@/components/ui/tabs";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://unleached-paulette-noctilucent.ngrok-free.dev";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 // Headers for ngrok to skip browser warning
 const ngrokHeaders = {
@@ -186,7 +186,7 @@ const emptySectionBanner: SectionBanner = {
     ctaUrl: "",
 };
 
-const API_URL_BASE = process.env.NEXT_PUBLIC_API_URL || "https://unleached-paulette-noctilucent.ngrok-free.dev";
+const API_URL_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 // Upload a file and get back a URL
 const uploadFile = async (file: File): Promise<string> => {

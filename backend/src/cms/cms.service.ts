@@ -12,7 +12,7 @@ export class CmsService {
 
     // Base URL for serving uploaded files
     private getBaseUrl(): string {
-        return process.env.API_BASE_URL || 'https://unleached-paulette-noctilucent.ngrok-free.dev';
+        return process.env.API_BASE_URL || 'http://localhost:4000';
     }
 
     // Transform image path to full URL (synchronous version for JSON serialization)
