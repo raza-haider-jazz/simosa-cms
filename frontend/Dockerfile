@@ -21,6 +21,8 @@ FROM registry.access.redhat.com/ubi9/nodejs-20
 
 WORKDIR /app
 
+
+
 # Copy package files
 COPY package*.json ./
 
