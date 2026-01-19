@@ -13,9 +13,11 @@ import { CarouselModule } from './carousel/carousel.module';
 import { ScreensModule } from './screens/screens.module';
 import { CmsModule } from './cms/cms.module';
 import { UploadModule } from './upload/upload.module';
+import { FirebaseModule } from './firebase/firebase.module';
 
 @Module({
   imports: [
+    FirebaseModule,
     UsersModule,
     PackagesModule,
     CategoriesModule,

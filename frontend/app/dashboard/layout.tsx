@@ -11,7 +11,6 @@ import {
     Search,
     ShoppingCart,
     Grid,
-    FileText,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -31,7 +30,6 @@ const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
     { href: "/dashboard/packages", label: "Packages", icon: ShoppingCart },
     { href: "/dashboard/grid", label: "App Grid", icon: Grid },
-    { href: "/dashboard/content", label: "Content", icon: FileText },
     { href: "/dashboard/notifications", label: "Push Notifications", icon: Bell },
 ];
 

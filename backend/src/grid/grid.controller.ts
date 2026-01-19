@@ -1,10 +1,14 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { GridService } from './grid.service';
+import { FirebaseService } from '../firebase/firebase.service';
 import { UserType } from '@prisma/client';
 
 @Controller('grid')
 export class GridController {
-    constructor(private readonly gridService: GridService) { }
+    constructor(
+        private readonly gridService: GridService,
+        private readonly firebaseService: FirebaseService,
+    ) { }
 
     @Post()
     create(@Body() data: {
@@ -94,5 +98,24 @@ export class GridController {
     @Post('reorder')
     reorder(@Body() items: { id: string; order: number }[]) {
         return this.gridService.reorder(items);
+    }
+
+    @Post('save-layout')
+    async saveLayout(@Body() body: {
+        prePaidItems: any[];
+        postPaidItems: any[];
+        screenId?: string;
+    }) {
+        // Save the layout
+        const result = await this.gridService.saveFullLayout(
+            body.prePaidItems,
+            body.postPaidItems,
+            body.screenId,
+        );
+
+        // Notify Firebase after successful save
+        await this.firebaseService.notifyLayoutSaved();
+
+        return result;
     }
 }
