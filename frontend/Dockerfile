@@ -16,7 +16,8 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:20-alpine
+# FROM node:20-alpine
+FROM registry.access.redhat.com/ubi9/nodejs-20
 
 WORKDIR /app
 
