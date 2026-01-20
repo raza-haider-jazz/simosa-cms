@@ -16,7 +16,7 @@ ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 COPY package*.json ./
  
 # Install dependencies
-RUN npm ci
+RUN npm install
  
 # Copy source code
 COPY . .
