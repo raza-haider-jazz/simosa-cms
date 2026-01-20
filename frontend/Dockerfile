@@ -2,7 +2,7 @@
 
 # SIMOSA CMS Frontend - Production Dockerfile for OpenShift
 
-# Fixed: Permissions for UBI image & Lockfile mismatch ignored
+# Fixed: Ownership order to allow lockfile updates
 
 # =============================================================================
  
@@ -18,19 +18,13 @@ ARG NEXT_PUBLIC_API_URL
 
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
  
-# Copy package files
-
 COPY package*.json ./
- 
-# FIX 1: Use 'npm install' (not 'npm ci') to ignore lockfile mismatch
+
+# FIX 1: Use 'npm install' to ignore lockfile mismatch
 
 RUN npm install
  
-# Copy source code
-
 COPY . .
- 
-# Build the Next.js application
 
 RUN npm run build
  
@@ -38,33 +32,33 @@ RUN npm run build
 
 FROM registry.access.redhat.com/ubi9/nodejs-20-minimal
  
-# FIX 2: Switch to root to fix permissions
+# 1. Switch to Root
 
 USER root
- 
+
 WORKDIR /app
  
-# FIX 3: Grant ownership of /app to the OpenShift user (1001)
-
-# This prevents "EACCES: permission denied" during npm install
-
-RUN chown -R 1001:0 /app
- 
-# FIX 4: Switch back to the secure user
-
-USER 1001
- 
-# Copy package files
+# 2. Copy files FIRST (They arrive owned by Root)
 
 COPY package*.json ./
  
-# Install only production dependencies
+# 3. FIX: Grant ownership of the FOLDER AND THE FILES to User 1001
 
-# FIX 5: Use 'npm install' here too for consistency
+# This ensures package-lock.json is writable
+
+RUN chown -R 1001:0 /app
+ 
+# 4. Switch to the secure user
+
+USER 1001
+ 
+# 5. Install (Now it has permission to update the lockfile)
 
 RUN npm install --only=production && npm cache clean --force
  
 # Copy built application
+
+# (Builder artifacts don't need to be writable, so this is fine)
 
 COPY --from=builder /app/.next ./.next
 
@@ -72,23 +66,15 @@ COPY --from=builder /app/public ./public
 
 COPY --from=builder /app/next.config.ts ./
  
-# Expose port
-
 EXPOSE 3000
- 
-# Environment defaults
 
 ENV NODE_ENV=production
 
 ENV PORT=3000
  
-# Health check
-
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
 
   CMD curl -f http://localhost:3000/ || exit 1
  
-# Start the application
-
 CMD ["npm", "run", "start"]
  
