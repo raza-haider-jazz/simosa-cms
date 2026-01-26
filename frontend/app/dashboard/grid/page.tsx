@@ -380,7 +380,7 @@ function SortableCarouselCard({
                     <div {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground">
                         <GripVertical className="h-4 w-4" />
                     </div>
-                    <h4 className="font-medium text-sm">Card {index + 1}</h4>
+                <h4 className="font-medium text-sm">Card {index + 1}</h4>
                 </div>
                 <Button variant="ghost" size="sm" onClick={onRemove} className="text-destructive h-8">
                     <Trash2 className="h-3 w-3 mr-1" /> Remove
@@ -528,9 +528,9 @@ function SortableGridItemEditor({
                     <div {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground">
                         <GripVertical className="h-4 w-4" />
                     </div>
-                    <h4 className="font-medium text-sm flex items-center gap-2">
-                        <Package className="h-4 w-4" /> Item {index + 1}
-                    </h4>
+                <h4 className="font-medium text-sm flex items-center gap-2">
+                    <Package className="h-4 w-4" /> Item {index + 1}
+                </h4>
                 </div>
                 <Button variant="ghost" size="sm" onClick={onRemove} className="text-destructive h-7">
                     <Trash2 className="h-3 w-3" />
@@ -543,7 +543,7 @@ function SortableGridItemEditor({
                     <Label className="text-xs">Icon (Circular Display)</Label>
                     <div className="flex gap-2 mt-1">
                         {item.iconUrl ? (
-                            <div className="relative w-12 h-12 border rounded-full overflow-hidden flex-shrink-0 bg-gray-100">
+                            <div className="relative w-12 h-12 border rounded-full overflow-hidden flex-shrink-0 bg-transparent">
                                 <img src={getImageUrl(item.iconUrl)} className="w-full h-full object-contain p-1" alt="" />
                                 <button onClick={() => onChange({ ...item, iconUrl: "" })} className="absolute -top-1 -right-1 bg-red-500 text-white p-0.5 rounded-full">
                                     <X className="h-2 w-2" />
@@ -726,7 +726,7 @@ function SortableSectionBannerEditor({
                     <div {...attributes} {...listeners} className="cursor-grab text-muted-foreground hover:text-foreground">
                         <GripVertical className="h-4 w-4" />
                     </div>
-                    <h4 className="font-medium text-sm">Banner {index + 1}</h4>
+                <h4 className="font-medium text-sm">Banner {index + 1}</h4>
                 </div>
                 <Button variant="ghost" size="sm" onClick={onRemove} className="text-destructive h-8">
                     <Trash2 className="h-3 w-3 mr-1" /> Remove
@@ -942,23 +942,23 @@ function SectionEditor({
                         onDragEnd={handleGridItemDragEnd}
                     >
                         <SortableContext items={editingItem.gridItems?.map(g => g.id) || []} strategy={verticalListSortingStrategy}>
-                            <div className="space-y-3 pr-4">
-                                {editingItem.gridItems?.map((item, index) => (
+                    <div className="space-y-3 pr-4">
+                        {editingItem.gridItems?.map((item, index) => (
                                     <SortableGridItemEditor
-                                        key={item.id}
-                                        item={item}
-                                        index={index}
-                                        onChange={(updated) => updateGridItem(index, updated)}
-                                        onRemove={() => removeGridItem(index)}
-                                    />
-                                ))}
-                                {(!editingItem.gridItems || editingItem.gridItems.length === 0) && (
-                                    <div className="text-center text-muted-foreground py-8">
-                                        <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                        <p className="text-sm">No grid items yet</p>
-                                    </div>
-                                )}
+                                key={item.id}
+                                item={item}
+                                index={index}
+                                onChange={(updated) => updateGridItem(index, updated)}
+                                onRemove={() => removeGridItem(index)}
+                            />
+                        ))}
+                        {(!editingItem.gridItems || editingItem.gridItems.length === 0) && (
+                            <div className="text-center text-muted-foreground py-8">
+                                <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                <p className="text-sm">No grid items yet</p>
                             </div>
+                        )}
+                    </div>
                         </SortableContext>
                     </DndContext>
                 </ScrollArea>
@@ -979,23 +979,23 @@ function SectionEditor({
                         onDragEnd={handleBannerDragEnd}
                     >
                         <SortableContext items={editingItem.sectionBanners?.map(b => b.id) || []} strategy={verticalListSortingStrategy}>
-                            <div className="space-y-3 pr-4">
-                                {editingItem.sectionBanners?.map((banner, index) => (
+                    <div className="space-y-3 pr-4">
+                        {editingItem.sectionBanners?.map((banner, index) => (
                                     <SortableSectionBannerEditor
-                                        key={banner.id}
-                                        banner={banner}
-                                        index={index}
-                                        onChange={(updated) => updateSectionBanner(index, updated)}
-                                        onRemove={() => removeSectionBanner(index)}
-                                    />
-                                ))}
-                                {(!editingItem.sectionBanners || editingItem.sectionBanners.length === 0) && (
-                                    <div className="text-center text-muted-foreground py-8">
-                                        <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                        <p className="text-sm">No banners yet</p>
-                                    </div>
-                                )}
+                                key={banner.id}
+                                banner={banner}
+                                index={index}
+                                onChange={(updated) => updateSectionBanner(index, updated)}
+                                onRemove={() => removeSectionBanner(index)}
+                            />
+                        ))}
+                        {(!editingItem.sectionBanners || editingItem.sectionBanners.length === 0) && (
+                            <div className="text-center text-muted-foreground py-8">
+                                <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                <p className="text-sm">No banners yet</p>
                             </div>
+                        )}
+                    </div>
                         </SortableContext>
                     </DndContext>
                 </ScrollArea>
@@ -1012,6 +1012,12 @@ export default function GridPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [screenId, setScreenId] = useState<string | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+    const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
     const [previewCardIndex, setPreviewCardIndex] = useState<{ [key: string]: number }>({});
     
     // Current view/edit tab
@@ -1131,14 +1137,14 @@ export default function GridPage() {
             const sanitizeItems = (items: GridItem[]) => items.map(item => ({
                 ...item,
                 images: (item.images || []).map(sanitizeImageValue).filter(Boolean),
-                gridItems: (item.gridItems || []).map(gi => ({
-                    ...gi,
-                    iconUrl: sanitizeImageValue(gi.iconUrl)
-                })),
-                sectionBanners: (item.sectionBanners || []).map(sb => ({
-                    ...sb,
-                    imageUrl: sanitizeImageValue(sb.imageUrl)
-                })),
+                                gridItems: (item.gridItems || []).map(gi => ({
+                                    ...gi,
+                                    iconUrl: sanitizeImageValue(gi.iconUrl)
+                                })),
+                                sectionBanners: (item.sectionBanners || []).map(sb => ({
+                                    ...sb,
+                                    imageUrl: sanitizeImageValue(sb.imageUrl)
+                                })),
                 carouselCards: (item.carouselCards || []).map(card => ({
                     ...card,
                     imageUrl: sanitizeImageValue(card.imageUrl)
@@ -1147,17 +1153,17 @@ export default function GridPage() {
 
             // Single API call to save everything + notify Firebase
             const res = await fetch(`${API_URL}/grid/save-layout`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
-                body: JSON.stringify({
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', ...ngrokHeaders },
+                        body: JSON.stringify({
                     prePaidItems: sanitizeItems(prePaidItems),
                     postPaidItems: sanitizeItems(postPaidItems),
-                    screenId: screenId,
-                })
-            });
-
-            if (!res.ok) {
-                const errorText = await res.text();
+                            screenId: screenId,
+                        })
+                    });
+                    
+                    if (!res.ok) {
+                        const errorText = await res.text();
                 console.error('Failed to save layout:', res.status, errorText);
                 throw new Error(`Failed to save layout: ${res.status} ${errorText}`);
             }
@@ -1168,10 +1174,10 @@ export default function GridPage() {
             // Reload to get fresh data with proper IDs
             console.log('Reloading grid items...');
             await loadGridItems();
-            alert('Layout saved successfully!');
+            showToast('Layout saved successfully!', 'success');
         } catch (error) {
             console.error('Failed to save layout:', error);
-            alert(`Failed to save layout: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            showToast(`Failed to save layout: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
         } finally {
             setSaving(false);
         }
@@ -1301,6 +1307,28 @@ export default function GridPage() {
     }
 
     return (
+        <>
+            {/* Toast Notification */}
+            {toast && (
+                <div className={cn(
+                    "fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg transition-all duration-300 flex items-center gap-2",
+                    toast.type === 'success' 
+                        ? "bg-gradient-to-r from-primary to-secondary text-white" 
+                        : "bg-destructive text-white"
+                )}>
+                    {toast.type === 'success' ? (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                    ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    )}
+                    <span className="font-medium">{toast.message}</span>
+                </div>
+            )}
+
         <div className="flex flex-col gap-6 md:flex-row h-[calc(100vh-100px)]">
             {/* Configuration Panel */}
             <Card className="flex-1 overflow-hidden flex flex-col gradient-card border-0 shadow-md">
@@ -1321,7 +1349,7 @@ export default function GridPage() {
                             variant={activeUserType === "PRE_PAID" ? "default" : "outline"}
                             size="sm"
                             onClick={() => setActiveUserType("PRE_PAID")}
-                            className={cn("flex-1 hover-lift", activeUserType === "PRE_PAID" && "bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 shadow-md")}
+                            className={cn("flex-1 hover-lift", activeUserType === "PRE_PAID" && "bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-md")}
                         >
                             <CreditCard className="h-4 w-4 mr-2" />
                             Pre-Paid ({prePaidItems.length})
@@ -1330,7 +1358,7 @@ export default function GridPage() {
                             variant={activeUserType === "POST_PAID" ? "default" : "outline"}
                             size="sm"
                             onClick={() => setActiveUserType("POST_PAID")}
-                            className={cn("flex-1 hover-lift", activeUserType === "POST_PAID" && "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-md")}
+                            className={cn("flex-1 hover-lift", activeUserType === "POST_PAID" && "bg-gradient-to-r from-secondary to-primary hover:opacity-90 shadow-md")}
                         >
                             <Smartphone className="h-4 w-4 mr-2" />
                             Post-Paid ({postPaidItems.length})
@@ -1409,7 +1437,7 @@ export default function GridPage() {
                         variant={previewUserType === "PRE_PAID" ? "default" : "ghost"}
                         size="sm"
                         onClick={() => setPreviewUserType("PRE_PAID")}
-                        className={cn("hover-lift", previewUserType === "PRE_PAID" && "bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 shadow-sm")}
+                        className={cn("hover-lift", previewUserType === "PRE_PAID" && "bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-sm")}
                     >
                         <Eye className="h-3 w-3 mr-1" /> Pre-Paid
                     </Button>
@@ -1417,7 +1445,7 @@ export default function GridPage() {
                         variant={previewUserType === "POST_PAID" ? "default" : "ghost"}
                         size="sm"
                         onClick={() => setPreviewUserType("POST_PAID")}
-                        className={cn("hover-lift", previewUserType === "POST_PAID" && "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-sm")}
+                        className={cn("hover-lift", previewUserType === "POST_PAID" && "bg-gradient-to-r from-secondary to-primary hover:opacity-90 shadow-sm")}
                     >
                         <Eye className="h-3 w-3 mr-1" /> Post-Paid
                     </Button>
@@ -1439,7 +1467,7 @@ export default function GridPage() {
                                     <div key={item.id} className="relative">
                                         {/* Banner */}
                                         {item.type === 'banner' && (
-                                            <div className="w-full aspect-[2/1] bg-slate-200 rounded-lg flex items-center justify-center relative overflow-hidden shadow-sm">
+                                            <div className="w-full min-h-[60px] bg-transparent rounded-lg flex items-center justify-center relative overflow-hidden shadow-sm">
                                                 {item.images[0] ? <img src={getImageUrl(item.images[0])} className="w-full h-full object-cover" alt="" /> : <ImageIcon className="text-slate-400 h-6 w-6" />}
                                                 {/* Text overlay inside banner */}
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex flex-col justify-end p-2">
@@ -1462,7 +1490,7 @@ export default function GridPage() {
                                                     const cardIndex = (previewCardIndex[item.id] || 0) % item.carouselCards!.length;
                                                     const card = item.carouselCards![cardIndex];
                                                     return (
-                                                        <div className="w-full aspect-[2/1] rounded-lg flex flex-col justify-end relative overflow-hidden" style={{ backgroundColor: card.backgroundColor }}>
+                                                        <div className="w-full min-h-[60px] rounded-lg flex flex-col justify-end relative overflow-hidden" style={{ backgroundColor: card.backgroundColor }}>
                                                             {card.imageUrl && <img src={getImageUrl(card.imageUrl)} className="absolute inset-0 w-full h-full object-cover" alt="" />}
                                                             <div className="relative z-10 p-2.5 bg-gradient-to-t from-black/60 to-transparent">
                                                                 <p className="text-[9px] font-semibold" style={{ color: card.textColor }}>{card.title}</p>
@@ -1516,7 +1544,7 @@ export default function GridPage() {
                                                         item.gridItems.map((gi, i) => (
                                                             <div key={gi.id || i} className="flex flex-col items-center text-center p-1">
                                                                 {/* Circular icon container */}
-                                                                <div className="relative w-8 h-8 rounded-full bg-gray-100 shadow-sm flex items-center justify-center mb-1 border border-gray-200 flex-shrink-0">
+                                                                <div className="relative w-8 h-8 rounded-full bg-transparent shadow-sm flex items-center justify-center mb-1 border border-gray-200 flex-shrink-0">
                                                                     {gi.iconUrl ? (
                                                                         <img src={getImageUrl(gi.iconUrl)} className="w-5 h-5 object-contain" alt="" />
                                                                     ) : (
@@ -1554,8 +1582,8 @@ export default function GridPage() {
                                                 <div className="space-y-2">
                                                     {item.gridItems && item.gridItems.length > 0 ? (
                                                         item.gridItems.map((gi, i) => (
-                                                            <div key={gi.id || i} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                                                                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 border border-gray-200">
+                                                            <div key={gi.id || i} className="flex items-center gap-2 p-2 bg-white/50 rounded-lg">
+                                                                <div className="w-8 h-8 rounded-full bg-transparent flex items-center justify-center flex-shrink-0 border border-gray-200">
                                                                     {gi.iconUrl ? (
                                                                         <img src={getImageUrl(gi.iconUrl)} className="w-5 h-5 object-contain" alt="" />
                                                                     ) : (
@@ -1771,20 +1799,20 @@ export default function GridPage() {
                                                 }}
                                             >
                                                 <SortableContext items={editingItem.carouselCards?.map(c => c.id) || []} strategy={verticalListSortingStrategy}>
-                                                    <div className="space-y-4">
-                                                        {editingItem.carouselCards?.map((card, index) => (
+                                            <div className="space-y-4">
+                                                {editingItem.carouselCards?.map((card, index) => (
                                                             <SortableCarouselCard
-                                                                key={card.id || index}
-                                                                card={card}
-                                                                index={index}
-                                                                onChange={(updated) => updateCarouselCard(index, updated)}
-                                                                onRemove={() => removeCarouselCard(index)}
-                                                            />
-                                                        ))}
-                                                        <Button variant="outline" className="w-full" onClick={addCarouselCard}>
-                                                            <Plus className="h-4 w-4 mr-2" />Add Card
-                                                        </Button>
-                                                    </div>
+                                                        key={card.id || index}
+                                                        card={card}
+                                                        index={index}
+                                                        onChange={(updated) => updateCarouselCard(index, updated)}
+                                                        onRemove={() => removeCarouselCard(index)}
+                                                    />
+                                                ))}
+                                                <Button variant="outline" className="w-full" onClick={addCarouselCard}>
+                                                    <Plus className="h-4 w-4 mr-2" />Add Card
+                                                </Button>
+                                            </div>
                                                 </SortableContext>
                                             </DndContext>
                                         </ScrollArea>
@@ -1835,20 +1863,20 @@ export default function GridPage() {
                                                 }}
                                             >
                                                 <SortableContext items={editingItem.gridItems?.map(g => g.id) || []} strategy={verticalListSortingStrategy}>
-                                                    <div className="space-y-3">
-                                                        {editingItem.gridItems?.map((item, index) => (
+                                            <div className="space-y-3">
+                                                {editingItem.gridItems?.map((item, index) => (
                                                             <SortableGridItemEditor
-                                                                key={item.id || index}
-                                                                item={item}
-                                                                index={index}
-                                                                onChange={(updated) => updateGridItem(index, updated)}
-                                                                onRemove={() => removeGridItem(index)}
-                                                            />
-                                                        ))}
-                                                        <Button variant="outline" className="w-full" onClick={addGridItem}>
-                                                            <Plus className="h-4 w-4 mr-2" />Add Grid Item
-                                                        </Button>
-                                                    </div>
+                                                        key={item.id || index}
+                                                        item={item}
+                                                        index={index}
+                                                        onChange={(updated) => updateGridItem(index, updated)}
+                                                        onRemove={() => removeGridItem(index)}
+                                                    />
+                                                ))}
+                                                <Button variant="outline" className="w-full" onClick={addGridItem}>
+                                                    <Plus className="h-4 w-4 mr-2" />Add Grid Item
+                                                </Button>
+                                            </div>
                                                 </SortableContext>
                                             </DndContext>
                                         </ScrollArea>
@@ -1892,20 +1920,20 @@ export default function GridPage() {
                                                 }}
                                             >
                                                 <SortableContext items={editingItem.gridItems?.map(g => g.id) || []} strategy={verticalListSortingStrategy}>
-                                                    <div className="space-y-3">
-                                                        {editingItem.gridItems?.map((item, index) => (
+                                            <div className="space-y-3">
+                                                {editingItem.gridItems?.map((item, index) => (
                                                             <SortableGridItemEditor
-                                                                key={item.id || index}
-                                                                item={item}
-                                                                index={index}
-                                                                onChange={(updated) => updateGridItem(index, updated)}
-                                                                onRemove={() => removeGridItem(index)}
-                                                            />
-                                                        ))}
-                                                        <Button variant="outline" className="w-full" onClick={addGridItem}>
-                                                            <Plus className="h-4 w-4 mr-2" />Add List Item
-                                                        </Button>
-                                                    </div>
+                                                        key={item.id || index}
+                                                        item={item}
+                                                        index={index}
+                                                        onChange={(updated) => updateGridItem(index, updated)}
+                                                        onRemove={() => removeGridItem(index)}
+                                                    />
+                                                ))}
+                                                <Button variant="outline" className="w-full" onClick={addGridItem}>
+                                                    <Plus className="h-4 w-4 mr-2" />Add List Item
+                                                </Button>
+                                            </div>
                                                 </SortableContext>
                                             </DndContext>
                                         </ScrollArea>
@@ -1984,5 +2012,6 @@ export default function GridPage() {
                 </DialogContent>
             </Dialog>
         </div>
+        </>
     );
 }

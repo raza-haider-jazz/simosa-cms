@@ -14,6 +14,7 @@ import { ScreensModule } from './screens/screens.module';
 import { CmsModule } from './cms/cms.module';
 import { UploadModule } from './upload/upload.module';
 import { FirebaseModule } from './firebase/firebase.module';
+import { DevicesModule } from './devices/devices.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { FirebaseModule } from './firebase/firebase.module';
     ScreensModule,
     CmsModule,
     UploadModule,
+    DevicesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

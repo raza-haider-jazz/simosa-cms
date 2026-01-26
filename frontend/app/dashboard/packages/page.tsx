@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Plus, Search, MoreHorizontal, Pencil, Trash, Upload, Image as ImageIcon, Eye, EyeOff, X, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -54,6 +54,35 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 const ngrokHeaders = {
     'ngrok-skip-browser-warning': 'true',
 };
+
+// Component that shows tooltip only when text is truncated
+function TruncatedText({ text, className }: { text: string; className?: string }) {
+    const textRef = useRef<HTMLParagraphElement>(null);
+    const [isTruncated, setIsTruncated] = useState(false);
+
+    useEffect(() => {
+        const el = textRef.current;
+        if (el) {
+            setIsTruncated(el.scrollWidth > el.clientWidth);
+        }
+    }, [text]);
+
+    return (
+        <div className={`relative ${isTruncated ? 'group cursor-pointer' : ''}`}>
+            <p 
+                ref={textRef}
+                className={`text-xs text-muted-foreground truncate max-w-[200px] ${className || ''}`}
+            >
+                {text}
+            </p>
+            {isTruncated && (
+                <div className="absolute left-0 bottom-full mb-1 z-50 hidden group-hover:block min-w-[200px] max-w-[400px] max-h-[300px] overflow-y-auto p-2 text-xs bg-gray-900 text-white rounded-md shadow-lg text-wrap break-words !opacity-100">
+                    {text}
+                </div>
+            )}
+        </div>
+    );
+}
 
 type Package = {
     id: string;
@@ -301,26 +330,30 @@ export default function PackagesPage() {
 
     const getImageUrl = (url: string | undefined) => {
         if (!url) return null;
-        if (url.startsWith('http') || url.startsWith('data:')) return url;
-        return `${API_URL}${url}`;
+        // For data URLs (base64), return as-is
+        if (url.startsWith('data:')) return url;
+        // For full URLs, also return as-is (external images)
+        if (url.startsWith('http')) return url;
+        // For relative paths (uploads), use the proxy to include ngrok headers
+        return `/api/proxy-image?path=${encodeURIComponent(url)}`;
     };
 
     const getPeriodBadgeColor = (period: string) => {
         switch (period) {
-            case 'DAILY': return 'bg-orange-500';
-            case 'WEEKLY': return 'bg-blue-500';
-            case 'MONTHLY': return 'bg-purple-500';
-            default: return 'bg-gray-500';
+            case 'DAILY': return 'bg-amber-500';
+            case 'WEEKLY': return 'bg-teal-500';
+            case 'MONTHLY': return 'bg-violet-500';
+            default: return 'bg-slate-400';
         }
     };
 
     const getCategoryBadgeColor = (category: string) => {
         switch (category) {
-            case 'Data': return 'bg-cyan-500';
-            case 'Hybrid': return 'bg-green-500';
-            case 'Calls': return 'bg-pink-500';
-            case 'SMS': return 'bg-yellow-500';
-            default: return 'bg-gray-500';
+            case 'Data': return 'bg-primary';
+            case 'Hybrid': return 'bg-secondary';
+            case 'Calls': return 'bg-teal-500';
+            case 'SMS': return 'bg-violet-500';
+            default: return 'bg-slate-400';
         }
     };
 
@@ -425,7 +458,7 @@ export default function PackagesPage() {
                                 </TableRow>
                             ) : (
                                 filteredPackages.map((pkg) => (
-                                    <TableRow key={pkg.id} className={!pkg.isActive ? "opacity-50" : ""}>
+                                    <TableRow key={pkg.id} className={!pkg.isActive ? "[&>td]:opacity-50 [&>td]:hover:opacity-100" : ""}>
                                         <TableCell>
                                             <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center overflow-hidden">
                                                 {pkg.imageUrl ? (
@@ -443,9 +476,7 @@ export default function PackagesPage() {
                                             <div>
                                                 <p className="font-medium">{pkg.name}</p>
                                                 {pkg.description && (
-                                                    <p className="text-xs text-muted-foreground truncate max-w-[200px]">
-                                                        {pkg.description}
-                                                    </p>
+                                                    <TruncatedText text={pkg.description} />
                                                 )}
                                             </div>
                                         </TableCell>
@@ -463,18 +494,16 @@ export default function PackagesPage() {
                                             {pkg.currency} {pkg.price}
                                         </TableCell>
                                         <TableCell>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleToggleActive(pkg)}
-                                                className={pkg.isActive ? "text-green-600" : "text-muted-foreground"}
+                                            <Badge
+                                                variant={pkg.isActive ? "default" : "secondary"}
+                                                className={pkg.isActive ? "bg-primary text-white" : "bg-muted-foreground text-white"}
                                             >
                                                 {pkg.isActive ? (
-                                                    <><Eye className="h-4 w-4 mr-1" /> Active</>
+                                                    <><Eye className="h-3 w-3 mr-1" /> Active</>
                                                 ) : (
-                                                    <><EyeOff className="h-4 w-4 mr-1" /> Hidden</>
+                                                    <><EyeOff className="h-3 w-3 mr-1" /> Deactivated</>
                                                 )}
-                                            </Button>
+                                            </Badge>
                                         </TableCell>
                                         <TableCell>
                                             <DropdownMenu>
@@ -488,6 +517,13 @@ export default function PackagesPage() {
                                                     <DropdownMenuItem onClick={() => openEditDialog(pkg)}>
                                                         <Pencil className="mr-2 h-4 w-4" />
                                                         Edit
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleToggleActive(pkg)}>
+                                                        {pkg.isActive ? (
+                                                            <><EyeOff className="mr-2 h-4 w-4" /> Deactivate</>
+                                                        ) : (
+                                                            <><Eye className="mr-2 h-4 w-4" /> Activate</>
+                                                        )}
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem 
                                                         onClick={() => handleDelete(pkg.id)}
@@ -652,8 +688,10 @@ export default function PackagesPage() {
                         {/* Active Toggle */}
                         <div className="flex items-center justify-between">
                             <div>
-                                <Label>Visibility</Label>
-                                <p className="text-xs text-muted-foreground">Show this package to users</p>
+                                <Label>Status</Label>
+                                <p className="text-xs text-muted-foreground">
+                                    {formData.isActive ? "Package is active and visible to users" : "Package is deactivated"}
+                                </p>
                             </div>
                             <Switch
                                 checked={formData.isActive}

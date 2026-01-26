@@ -7,28 +7,28 @@ export default function Dashboard() {
             value: "2,543",
             change: "+12.5%",
             icon: Users,
-            gradient: "from-blue-500 to-cyan-500",
+            gradient: "from-primary to-rose-400",
         },
         {
             title: "Active Packages",
             value: "145",
             change: "+8.2%",
             icon: Package,
-            gradient: "from-purple-500 to-pink-500",
+            gradient: "from-secondary to-amber-400",
         },
         {
             title: "Total Revenue",
             value: "$54.2K",
             change: "+23.1%",
             icon: TrendingUp,
-            gradient: "from-green-500 to-emerald-500",
+            gradient: "from-teal-500 to-cyan-400",
         },
         {
             title: "System Activity",
             value: "98.5%",
             change: "+2.4%",
             icon: Activity,
-            gradient: "from-orange-500 to-red-500",
+            gradient: "from-rose-400 to-pink-300",
         },
     ];
 
@@ -57,7 +57,7 @@ export default function Dashboard() {
                                 <h3 className="text-2xl font-bold tracking-tight">
                                     {stat.value}
                                 </h3>
-                                <p className="text-xs text-green-600 font-semibold flex items-center gap-1">
+                                <p className="text-xs text-primary font-semibold flex items-center gap-1">
                                     <TrendingUp className="h-3 w-3" />
                                     {stat.change} from last month
                                 </p>
@@ -75,7 +75,7 @@ export default function Dashboard() {
             <div className="grid gap-4 md:grid-cols-2">
                 <div className="gradient-card rounded-xl p-6 shadow-md border-0">
                     <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-rose-400 to-pink-300 flex items-center justify-center">
                             <Activity className="h-4 w-4 text-white" />
                         </div>
                         Recent Activity
@@ -102,23 +102,23 @@ export default function Dashboard() {
 
                 <div className="gradient-card rounded-xl p-6 shadow-md border-0">
                     <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-400 flex items-center justify-center">
                             <TrendingUp className="h-4 w-4 text-white" />
                         </div>
                         Quick Stats
                     </h3>
                     <div className="space-y-4">
                         {[
-                            { label: "Active Sessions", value: "1,234", color: "from-blue-500 to-cyan-500" },
-                            { label: "Pending Approvals", value: "23", color: "from-orange-500 to-red-500" },
-                            { label: "Total Content Items", value: "567", color: "from-green-500 to-emerald-500" },
+                            { label: "Active Sessions", value: "1,234", color: "from-primary to-rose-400" },
+                            { label: "Pending Approvals", value: "23", color: "from-secondary to-amber-400" },
+                            { label: "Total Content Items", value: "567", color: "from-teal-500 to-cyan-400" },
                         ].map((stat, index) => (
                             <div key={index} className="space-y-2">
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm font-medium">{stat.label}</span>
                                     <span className="text-sm font-bold">{stat.value}</span>
                                 </div>
-                                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                                     <div
                                         className={`h-full bg-gradient-to-r ${stat.color} rounded-full`}
                                         style={{ width: `${Math.random() * 40 + 60}%` }}

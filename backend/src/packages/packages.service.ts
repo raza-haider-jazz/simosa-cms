@@ -16,6 +16,7 @@ export class PackagesService {
     findAll() {
         return this.prisma.package.findMany({
             include: { category: true },
+            orderBy: { createdAt: 'asc' },
         });
     }
 
